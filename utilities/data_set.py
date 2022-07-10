@@ -15,6 +15,7 @@ import tensorflow_hub as hub
 import cv2
 import os 
 import numpy as np
+from draw_output import *
 
 
 
@@ -55,7 +56,7 @@ def frames_extraction(video_path,sequence_length = 30):
     Args:
         video_path: The path of the video in the disk, whose frames are to be extracted.
     Returns:
-        frames_list: A list containing the resized and normalized frames of the video.
+        frames_list: A list containing  frames of the video.
     '''
 
     # Declare a list to store video frames.
@@ -84,10 +85,9 @@ def frames_extraction(video_path,sequence_length = 30):
             break
 
         # Resize the Frame to fixed height and width.
-        normalized_frame = frame /255
         
         # Append the normalized frame into the frames list
-        frames_list.append(normalized_frame)
+        frames_list.append(frame)
     
     # Release the VideoCapture object. 
     cv2.destroyAllWindows()
@@ -139,6 +139,8 @@ def makeDataSet(model,to,actions,sequence_length=30,no_sequences=1,frame_delay =
 
                     # extract features from each frame 
                     keypoints, bounding_boxes = extractFeatures(frame,model)
+
+                    draw_features(frame,keypoints,boundingBoxes = bounding_boxes)
 
                     # add text which indecates starting of new video collection
                     if frame_num == 0:
@@ -242,7 +244,7 @@ def load_hub_model(path):
 actions = ['spider_man',"peace"]
 createDatasetFolders(to="DATA_SET",actions= actions)
 net =load_hub_model("models/movenet_multipose_lightning_1")
-makeDataSet(model =net,to ="DATA_SET",actions = actions,sequences = 30,no_sequences = 30 ,vids_folder="vid_test")
+makeDataSet(model =net,to ="DATA_SET",actions = actions,sequence_length = 30,no_sequences = 30 ,vids_folder=None)
 
 
                     

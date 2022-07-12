@@ -163,7 +163,7 @@ def makeDataSet(model,to,actions,sequence_length=30,no_sequences=1,frame_delay =
                     npy_path = os.path.join(to, action, str(sequence), str(frame_num))
 
                     # save extracted features
-                    np.save(npy_path, keypoints.flatten())
+                    np.save(npy_path, keypoints[0].flatten())
 
                     if cv2.waitKey(10) & 0xFF == ord('q'):
                        break
@@ -199,7 +199,7 @@ def makeDataSet(model,to,actions,sequence_length=30,no_sequences=1,frame_delay =
                     features_path = os.path.join(to,action,str(vid_num),str(frame_num))
 
                     # save extracted features in features_path 
-                    np.save(features_path,keypoints.flatten())
+                    np.save(features_path,keypoints[0].flatten())
     
 
 
@@ -241,7 +241,7 @@ def load_hub_model(path):
 
 
 # testing
-actions = ['spider_man',"peace"]
+actions = ['posing',"not_posing"]
 createDatasetFolders(to="DATA_SET",actions= actions)
 net =load_hub_model("models/movenet_multipose_lightning_1")
 makeDataSet(model =net,to ="DATA_SET",actions = actions,sequence_length = 30,no_sequences = 30 ,vids_folder=None)

@@ -1,0 +1,29 @@
+#General SETTINGS
+data_directory: DATA_SET #DataSet Directory
+actions: [spider_man, peace] #Classes names in Dataset
+no_classes: 2 #Number of classes in dataset
+test_size: 0.2 #Size of testset
+theshold: 0.5 #Threshold for kepoints and boundingBoxes
+model_directory: models/movenet_multipose_lightning_1 #Pose estimation model directory
+
+#LSTM model configuration
+model:
+  - layer: LSTM
+    units: 64
+    return_sequence: True
+    activation: relu
+    input_shape: (30,51)
+  - layer: LSTM
+    units: 128
+    return_sequence: True
+    activation: relu
+  - layer: LSTM
+    units: 64
+    return_sequence: False
+    activation: relu
+  - layer: Dense
+    units: 64
+    activation: relu
+  - layer: Dense
+    units: 32
+    activation: relu

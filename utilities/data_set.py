@@ -15,7 +15,7 @@ import tensorflow_hub as hub
 import cv2
 import os 
 import numpy as np
-from draw_output import *
+from utilities.draw_output import *
 
 
 
@@ -240,11 +240,11 @@ def load_hub_model(path):
 
 
 
-# testing
-actions = ['posing',"not_posing"]
-createDatasetFolders(to="DATA_SET",actions= actions)
-net =load_hub_model("models/movenet_multipose_lightning_1")
-makeDataSet(model =net,to ="DATA_SET",actions = actions,sequence_length = 30,no_sequences = 30 ,vids_folder=None)
+# # testing
+# actions = ['posing',"not_posing"]
+# createDatasetFolders(to="DATA_SET",actions= actions)
+# net =load_hub_model("models/movenet_multipose_lightning_1")
+# makeDataSet(model =net,to ="DATA_SET",actions = actions,sequence_length = 30,no_sequences = 30 ,vids_folder=None)
 
 
                     

@@ -18,9 +18,11 @@ from utilities.data_set import extractFeatures
 from utilities.draw_output import draw_features ,EDGES
 import numpy as np
 
+from utilities.tracker import Tracker
 
 
-def single_person_detection(sequence,frame,action_model,sequence_length,actionMap,output_location):
+
+def single_person_detection(sequence,frame,action_model,sequence_length,actionMap,output_location,id):
     '''
     This function is to perform Action detection for just one person 
 
@@ -37,7 +39,6 @@ def single_person_detection(sequence,frame,action_model,sequence_length,actionMa
 
     '''
 
-  
 
     # perform action detection only if there 
     # is {sequence_length} number of skeleton in skel_seq
@@ -52,9 +53,13 @@ def single_person_detection(sequence,frame,action_model,sequence_length,actionMa
         # get frame y and x to put text in correct place according to frame size
         y,x = frame.shape[:2]
 
+        # save predection output with person id to text 
+        text += " " + str(id + 1)
+
+        if(output_location[4] > 0.5):
         # put output on frame
-        cv2.putText(frame, text, (int(output_location[1] * x),int(output_location[0] * y)), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 3, cv2.LINE_AA)
+          cv2.putText(frame, text, (int(output_location[1] * x),int((output_location[0] * y ) -10)), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 2, cv2.LINE_AA)
 
 
         
@@ -88,8 +93,10 @@ def get_frameSequence(sequence,distance_sequence,frame_num,old_length,skeleton,f
 
     ''' 
 
+
     # append skeleton to old sequence
     sequence.append(skeleton)
+
 
 
     # take just last 30 skeletons of old sequence
@@ -104,6 +111,7 @@ def get_frameSequence(sequence,distance_sequence,frame_num,old_length,skeleton,f
     # get new length of distance_sequence to check if new skeleton is added to it or none
     new_length = len(distance_sequence)
     
+
 
     # if new skeleton is added to distance sequence then we will make it as main sequence
     if new_length >= sequence_length and old_length < new_length:
@@ -137,6 +145,27 @@ def detect(pose_model,action_model,video_path,actions):
 
          
     '''
+    skels_tracker = Tracker()
+
+
+    # boolean array of people in image 
+    # if value in nth plase is True then there is a person in it
+    people = [False] * 6
+
+    # list of person sequence on multiple frames
+    skel_seq = [[] for i in range(6)]
+
+    # distance_sequence (taking the nth frames not subseqnet frames)
+    frame_sequence = [[] for i in range(6)]
+
+    # old lendth of frame_sequence before adding new skeleton to it
+    old_length = 0
+
+    # current frame number
+    frame_num = 0
+
+    # dictionary of label and corresponding action
+    actionMap = {num:label for num,label in enumerate(actions)}
 
     # check if detection will be on saved video or webcam feed
     if video_path == None:
@@ -148,20 +177,7 @@ def detect(pose_model,action_model,video_path,actions):
         cap=cv2.VideoCapture(video_path)
 
 
-    # list of person sequence on multiple frames
-    skel_seq = []
-
-    # distance_sequence (taking the nth frames not subseqnet frames)
-    frame_sequence = []
-
-    # old lendth of frame_sequence before adding new skeleton to it
-    old_length = 0
-
-    # current frame number
-    frame_num = 0
-
-    # dictionary of label and corresponding action
-    actionMap = {num:label for num,label in enumerate(actions)}
+  
 
     # loop throw webcam feed
     while True:
@@ -179,12 +195,33 @@ def detect(pose_model,action_model,video_path,actions):
         # extract features from current frame
         keypoints,boundingBoxes = extractFeatures(frame,pose_model)
 
-        # add extracted feature to sequences
-        skel_seq,frame_sequence,old_length=get_frameSequence(skel_seq,frame_sequence,frame_num,old_length,keypoints[0].flatten(),1,30)
-        
-        
-        # detect on sequence
-        single_person_detection(skel_seq,frame,action_model,30,actionMap,boundingBoxes[0])
+
+        # get people dictionary , box dictionary and new_people if added
+        dict,box_dict,new_people =skels_tracker.track(keypoints,boundingBoxes,people)
+
+
+        people = [False] * 6
+
+
+        for key,value in dict.items():
+
+            # add extracted feature to sequences
+
+            # if one person is added in some id then
+            # the corresponding sequence will become empty to start over with this person
+            if new_people[key] ==False:
+                skel_seq[key]=[]
+                frame_sequence[key]=[]
+
+            # get sequences for each person in image
+            skel_seq[key],frame_sequence[key],old_length=get_frameSequence(skel_seq[key],frame_sequence[key],frame_num,old_length,value.flatten(),1,30)
+            
+            # make old_people = new_people
+            people[key]= new_people[key]
+            
+            
+            # detect on sequence
+            single_person_detection(skel_seq[key],frame,action_model,30,actionMap,box_dict[key],key)
 
         # draw features (keypoints, boundingBoxes and output of detection if found)
         draw_features(frame,keypoints,boundingBoxes,EDGES)

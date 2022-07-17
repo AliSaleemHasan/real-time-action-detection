@@ -3,14 +3,16 @@ This file is for creating model and train it using tensorFlow
 
     Functions :
         LSTM_model(modelConfig)
-        getDataSet(actions,datasetPath,sequence_length,test_size)
+        getDataSet(classes,datasetPath,sequence_length,test_size)
         Train(model,model_path,X_train,y_train,epochs,optimizer,loss,metric,logsPath)
 
 '''
 
 import os 
 import yaml
+import sys
 import time
+import logging
 import numpy as np
 import matplotlib.pyplot as plt
 from yaml.loader import SafeLoader
@@ -18,31 +20,26 @@ from keras.utils.np_utils import to_categorical
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.layers import LSTM, Dense
-from tensorflow.python.keras.metrics import BinaryAccuracy
+from tensorflow.python.keras.metrics import BinaryAccuracy,Accuracy
 from tensorflow.python.keras.callbacks import TensorBoard
-from sklearn.metrics import confusion_matrix,classification_report
+from sklearn.metrics import confusion_matrix
 
 
 
+logging.basicConfig(stream=sys.stdout, level=logging.INFO,
+					format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
-
-
-def LSTM_model(modelConfigPath):
+def LSTM_model(modelConfig):
     '''
     This function is for creating our LSTM model 
 
     Args : 
-        modelConfigPath : path for config.yaml file 
+        modelConfigPath : model configuration  
     
     Returns :  actionModel (our action detection model)
     '''
-    # get all config from config.yaml file
-    with open(modelConfigPath) as f:
-        config = yaml.load(f, Loader=SafeLoader)
-
-    # get model config from config
-    modelConfig = config['model']
+ 
 
     # define new keras Sequential model
     model = Sequential()
@@ -75,13 +72,13 @@ def LSTM_model(modelConfigPath):
 
     return model
 
-def getDataSet(actions,datasetPath,sequence_length,test_size):
+def getDataSet(classes,datasetPath,sequence_length,test_size):
     '''
     This function is used to get dataset labels and sequences and split it to 
     input X and output(labels) Y
 
         Args:   
-            actions : our dataset actions
+            classes : our dataset classes
             datasetPath: path for our saved dataset
             sequence_length: number of frame in each video
             test_size: size for testSet
@@ -97,10 +94,10 @@ def getDataSet(actions,datasetPath,sequence_length,test_size):
     labels = []
 
     # label map for action (each action points to number)
-    labelMap = {label:num for num,label in enumerate(actions)}
+    labelMap = {label:num for num,label in enumerate(classes)}
 
-    # loop throw action to return sequences and labels for all actions in dataset 
-    for action in actions:
+    # loop throw action to return sequences and labels for all classes in dataset 
+    for action in classes:
 
         # get all video for action by looping over all videos folders for this action 
         for videoFolder in np.array(os.listdir(os.path.join(datasetPath,action))).astype(int):
@@ -133,8 +130,7 @@ def getDataSet(actions,datasetPath,sequence_length,test_size):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
 
     end_time = time.perf_counter()
-    print("test")
-    print(f'It took {end_time- start_time :0.2f} second(s) to complete.')
+    logging.info(f'It took {end_time- start_time :0.2f} second(s) to complete.')
 
 
     return X_train,X_test,y_train,y_test
@@ -219,9 +215,9 @@ def plot_confusion_matrix(y_true, y_pred, classes,
 
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-        print("Display normalized confusion matrix ...")
+        logging.info("Display normalized confusion matrix ...")
     else:
-        print('Display confusion matrix without normalization ...')
+        logging.info('Display confusion matrix without normalization ...')
 
 
     fig, ax = plt.subplots()
@@ -294,7 +290,7 @@ def evaluate_model(model, classes, X_train, X_test, y_train, y_test):
 
     # Time cost
     average_time = (time.time() - t0) / (len(y_train) + len(y_test))
-    print("Time cost for predicting on train and test data is: "
+    logging.info("Time cost for predicting on train and test data is: "
           "{:.5f} seconds".format(average_time))
 
     # Plot confucion_matrix (TP,TN,FP,FN)
@@ -306,14 +302,44 @@ def evaluate_model(model, classes, X_train, X_test, y_train, y_test):
 
 
 
+if __name__ == "__main__":
+
+    
+    with open('config.yaml') as f:
+         config = yaml.load(f, Loader=SafeLoader)
+    
+
+    # get all needed configuration for training
+    classes = config['classes']
+    dataset_path = config['data_directory']
+    test_size = config['test_size']
+    sequence_length= config['sequence_length']
+    epochs = config['epochs']
+    optimizer = config['optimizer']
+    loss = config['loss']
+    log_path = config['log_path']
+    model_config= config['model']
+    saved_weights_path=config['saved_weights_path']
+    metric = config['metric']
+    if metric == 'binary':
+        metric = BinaryAccuracy()
+    else :
+        metric = Accuracy()
+
+
+    # get training data from dataset folder
+    X_train,X_test,y_train,y_test = getDataSet(classes,dataset_path,sequence_length,test_size)
+
+    # get training model
+    lstm = LSTM_model(model_config)
+
+    # train model on our data
+    model =Train(lstm,saved_weights_path,X_train,y_train,epochs,optimizer,loss,metric,log_path)
+
+    # evaluate model on test data
+    evaluate_model(model,classes,X_train,X_test,y_train,y_test)
+    
 
 
 
-# X_train,X_test,y_train,y_test = getDataSet(['posing','not_posing'],'DATA_SET',30,0.2)
-# lstm = LSTM_model('config.yaml')
 
-# model =Train(lstm,"models/weights.h5",X_train,y_train,2000,'Adam','binary_crossentropy',BinaryAccuracy(),'logs')
-
-
-
-# evaluate_model(model,['posing','not_posing'],X_train,X_test,y_train,y_test)

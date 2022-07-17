@@ -1,10 +1,18 @@
 #General SETTINGS
 data_directory: DATA_SET #DataSet Directory
-actions: [spider_man, peace] #Classes names in Dataset
+classes: [posing, not_posing] #Classes names in Dataset
 no_classes: 2 #Number of classes in dataset
 test_size: 0.2 #Size of testset
 theshold: 0.5 #Threshold for kepoints and boundingBoxes
 model_directory: models/movenet_multipose_lightning_1 #Pose estimation model directory
+sequence_length: 30 # number of frames in each video
+epochs: 2000 #number of epochs to train on
+optimizer: Adam #Adam , RMSprops .. etc
+loss: binary_crossentropy #binary_crossentropy, categorical_crossentropy...
+log_path: "logs" # where to save logs after training
+saved_weights_path: "models/weights.h5"
+metric: binary
+frame_distance: 1 #distance between frames that we want to take
 
 #LSTM model configuration
 model:

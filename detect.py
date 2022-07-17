@@ -10,6 +10,9 @@ This file is applying our Action detection on videos (from webcam or saved video
 
 
 
+import yaml
+from yaml.loader import SafeLoader
+
 import cv2
 from sympy import sequence
 import tensorflow_hub as hub
@@ -132,7 +135,7 @@ def get_frameSequence(sequence,distance_sequence,frame_num,old_length,skeleton,f
     
 
 
-def detect(pose_model,action_model,video_path,actions):
+def detect(pose_model,action_model,video_path,actions,sequence_length,frame_distance):
     '''
     This function is to perform action detection on video (saved video or webcam feed)
     by using multiPose detection Model + LSTM model for action detection 
@@ -142,6 +145,9 @@ def detect(pose_model,action_model,video_path,actions):
             action_model: used LSTM model for action detection
             video_path: video to detect on , or webcam feed if None
             actions: dataset actions
+            sequence_length: desired sequence length (number of frame in each video)
+            frame_distance : distance between frames that we want to take 
+
 
          
     '''
@@ -214,14 +220,14 @@ def detect(pose_model,action_model,video_path,actions):
                 frame_sequence[key]=[]
 
             # get sequences for each person in image
-            skel_seq[key],frame_sequence[key],old_length=get_frameSequence(skel_seq[key],frame_sequence[key],frame_num,old_length,value.flatten(),1,30)
+            skel_seq[key],frame_sequence[key],old_length=get_frameSequence(skel_seq[key],frame_sequence[key],frame_num,old_length,value.flatten(),frame_distance,sequence_length)
             
             # make old_people = new_people
             people[key]= new_people[key]
             
             
             # detect on sequence
-            single_person_detection(skel_seq[key],frame,action_model,30,actionMap,box_dict[key],key)
+            single_person_detection(skel_seq[key],frame,action_model,sequence_length,actionMap,box_dict[key],key)
 
         # draw features (keypoints, boundingBoxes and output of detection if found)
         draw_features(frame,keypoints,boundingBoxes,EDGES)
@@ -249,6 +255,30 @@ def detect(pose_model,action_model,video_path,actions):
 
 
             
+if __name__ == "__main__":
+
+    
+    with open('config.yaml') as f:
+         config = yaml.load(f, Loader=SafeLoader)
+    
+
+    # get all needed configuration for training
+    classes = config['classes']
+    model_directory = config['model_directory']
+    sequence_length= config['sequence_length']
+    saved_weights_path=config['saved_weights_path']
+    modelConfig = config['model']
+    frame_distance = config['frame_distance']
+
+
+    pose_model = hub.load(model_directory)
+    net = pose_model.signatures['serving_default']
+    action_model = LSTM_model(modelConfig)
+    action_model.load_weights(saved_weights_path)
+
+    detect(net,action_model,None,classes,sequence_length,frame_distance)
+
+    
 
                 
             
@@ -259,13 +289,3 @@ def detect(pose_model,action_model,video_path,actions):
 
 
 
-pose_model = hub.load("models/movenet_multipose_lightning_1")
-net = pose_model.signatures['serving_default']
-
-
-action_model = LSTM_model('config.yaml')
-action_model.load_weights("models/weights.h5")
-
-
-
-detect(net,action_model,None,['posing','not_posing'])

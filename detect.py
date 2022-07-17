@@ -12,6 +12,7 @@ This file is applying our Action detection on videos (from webcam or saved video
 
 import yaml
 from yaml.loader import SafeLoader
+import argparse
 
 import cv2
 from sympy import sequence
@@ -22,6 +23,18 @@ from utilities.draw_output import draw_features ,EDGES
 import numpy as np
 
 from utilities.tracker import Tracker
+
+
+
+
+# get configuration file 
+with open('config.yaml') as f:
+    config = yaml.load(f, Loader=SafeLoader)
+
+parser = argparse.ArgumentParser(description="detect on video or webcam feed")
+parser.add_argument("--input",default = None,help="input of detection \n None for webcam , videoPath for video or rtsp link")
+parser.add_argument('--distance',default=config['frame_distance'],type=int,help="distance between frames that we want to take")
+args = parser.parse_args()
 
 
 
@@ -247,28 +260,16 @@ def detect(pose_model,action_model,video_path,actions,sequence_length,frame_dist
    
 
 
-
-            
-
-
-
-
-
-            
-if __name__ == "__main__":
-
-    
-    with open('config.yaml') as f:
-         config = yaml.load(f, Loader=SafeLoader)
-    
+def main(config):
 
     # get all needed configuration for training
     classes = config['classes']
     model_directory = config['model_directory']
     sequence_length= config['sequence_length']
     saved_weights_path=config['saved_weights_path']
-    modelConfig = config['model']
-    frame_distance = config['frame_distance']
+    modelConfig = config['model']  
+    frame_distance = args.distance
+    input = args.input
 
 
     pose_model = hub.load(model_directory)
@@ -276,8 +277,15 @@ if __name__ == "__main__":
     action_model = LSTM_model(modelConfig)
     action_model.load_weights(saved_weights_path)
 
-    detect(net,action_model,None,classes,sequence_length,frame_distance)
+    detect(net,action_model,input,classes,sequence_length,frame_distance)
 
+
+
+
+            
+if __name__ == "__main__":
+    main(config)
+  
     
 
                 

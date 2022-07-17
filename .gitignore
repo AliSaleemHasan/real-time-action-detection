@@ -1,7 +1,6 @@
 /models/movenet_multipose_lightning_1
-/models/weights.h5
 
 *__pycache__
-/DATA_SET
+/DATA_SET/*
 /logs/train
 

@@ -1,13 +1,13 @@
 '''
     Main Class for DataSet operations including:
     
-    1- makeDataSet(model,to,actions,sequence_length,no_sequences,frame_delay,vids_folder)
+    1- makeDataSet(model,to,classes,sequence_length,no_sequences,frame_delay,vids_folder)
    
     2- extractFeatures(frame,model):
 
     3- frames_extraction(video_path,sequence_length )
 
-    4- createDatasetFolders(to,actions)
+    4- createDatasetFolders(to,classes)
 '''
 
 import tensorflow as tf
@@ -15,8 +15,19 @@ import tensorflow_hub as hub
 import cv2
 import os 
 import numpy as np
-from utilities.draw_output import *
+from draw_output import *
+import yaml
+from yaml import SafeLoader
+import argparse
 
+
+# get configuration file 
+with open('../config.yaml') as f:
+    config = yaml.load(f, Loader=SafeLoader)
+
+parser = argparse.ArgumentParser(description="create dataset from webcam feed or from saved videos on disk")
+parser.add_argument("--input",default = None,help="where to collect dataset from \n None for webcam , videoFolderPath for videos ")
+args = parser.parse_args()
 
 
 def extractFeatures(frame,model):
@@ -97,14 +108,14 @@ def frames_extraction(video_path,sequence_length = 30):
     return frames_list 
 
 
-def makeDataSet(model,to,actions,sequence_length=30,no_sequences=1,frame_delay = 1,vids_folder= None):
+def makeDataSet(model,to,classes,sequence_length=30,no_sequences=1,frame_delay = 1,vids_folder= None):
     '''
         This function will get features from videos (from webcam or exsited videos) as np.array
         and saves it in 'to' folder.
         Args:
             model : used model for feature extraction (multipose lightning in our case)
             to : where to save created dataset 
-            actions : what  actions in data set (cheating, notCheating) in our case
+            classes : what  classes in data set (cheating, notCheating) in our case
             sequence_length: number of extracted frames from each video 
             no_sequence :  how many videos for each action
             frame_delay :EX. if frame_delay is 5 then this funciton will take each frame 
@@ -120,8 +131,8 @@ def makeDataSet(model,to,actions,sequence_length=30,no_sequences=1,frame_delay =
         cap = cv2.VideoCapture(0)
         
 
-        # loap throw actions to make videos for each action 
-        for action in actions :
+        # loap throw classes to make videos for each action 
+        for action in classes :
 
            # iterate for no_sequence to make no_sequence video for each action
             for sequence in range(no_sequences):
@@ -180,8 +191,8 @@ def makeDataSet(model,to,actions,sequence_length=30,no_sequences=1,frame_delay =
     # get videos from vids_folder one by one
     else:
 
-        # loap throw all actions in dataset (cheating, notcheating ) in our case 
-        for action in actions:
+        # loap throw all classes in dataset (cheating, notcheating ) in our case 
+        for action in classes:
 
             # loap throw all videos in vids_folder
             for vid_num,video in  enumerate(os.listdir(os.path.join(vids_folder,action))):
@@ -204,19 +215,19 @@ def makeDataSet(model,to,actions,sequence_length=30,no_sequences=1,frame_delay =
 
 
 
-def createDatasetFolders(to,actions,no_sequences=30):
+def createDatasetFolders(to,classes,no_sequences=30):
     '''
     This function is to create directories which will organaize saved DataSet in directories 
 
     Args: 
         to: distenation directory
-        actions: dataset classes
+        classes: dataset classes
         no_sequences: number of videos for each action
     
     '''
 
-    # loap throw actions 
-    for action in actions :
+    # loap throw classes 
+    for action in classes :
 
         # create new folder for each action if not exist
         os.makedirs(os.path.join(to,action),exist_ok=True)
@@ -227,24 +238,27 @@ def createDatasetFolders(to,actions,no_sequences=30):
             # create no_sequence folders for each action inside action folder 
             os.makedirs(os.path.join(to,action,str(index)),exist_ok=True)
 
-    
+      
 
-    
-    
-# TODO : add this funciton to models/load_save_model.py and import it 
-def load_hub_model(path):
-    model = hub.load(path)
-    net = model.signatures['serving_default']
-    return net
+def main(config):
+    classes = config['classes']
+    model_directory = config['model_directory']
+    data_directory= config['data_directory']
+    sequence_length= config['sequence_length']
+    no_sequences = config['no_sequences']
+    createDatasetFolders(to=data_directory,classes=classes)
+    poseModel = hub.load(model_directory)
+    net = poseModel.signatures['serving_default']
+    input = args.input
+    makeDataSet(model =net,to =data_directory,classes = classes,sequence_length = sequence_length,no_sequences = no_sequences ,vids_folder=input)
+
+
+if __name__ == '__main__':
+    main(config)
 
 
 
 
-# # testing
-# actions = ['posing',"not_posing"]
-# createDatasetFolders(to="DATA_SET",actions= actions)
-# net =load_hub_model("models/movenet_multipose_lightning_1")
-# makeDataSet(model =net,to ="DATA_SET",actions = actions,sequence_length = 30,no_sequences = 30 ,vids_folder=None)
 
 
                     

@@ -6,6 +6,7 @@ test_size: 0.2 #Size of testset
 theshold: 0.5 #Threshold for kepoints and boundingBoxes
 model_directory: models/movenet_multipose_lightning_1 #Pose estimation model directory
 sequence_length: 30 # number of frames in each video
+no_sequences: 30 # number of videos in each class
 epochs: 2000 #number of epochs to train on
 optimizer: Adam #Adam , RMSprops .. etc
 loss: binary_crossentropy #binary_crossentropy, categorical_crossentropy...

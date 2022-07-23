@@ -72,7 +72,7 @@ def single_person_detection(sequence,frame,action_model,sequence_length,actionMa
         # save predection output with person id to text 
         text += " " + str(id + 1)
 
-        if(output_location[4] > 0.5):
+        if(output_location[4] > 0):
         # put output on frame
           cv2.putText(frame, text, (int(output_location[1] * x),int((output_location[0] * y ) -10)), 
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 2, cv2.LINE_AA)
@@ -221,8 +221,8 @@ def detect(pose_model,action_model,video_path,actions,sequence_length,frame_dist
 
         people = [False] * 6
 
-
         for key,value in dict.items():
+
 
             # add extracted feature to sequences
 

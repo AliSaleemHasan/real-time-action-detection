@@ -19,10 +19,11 @@ from yaml.loader import SafeLoader
 from keras.utils.np_utils import to_categorical
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import LSTM, Dense
-from tensorflow.python.keras.metrics import BinaryAccuracy,Accuracy
+from tensorflow.python.keras.layers import LSTM, Dense,Dropout
+from tensorflow.python.keras.metrics import BinaryAccuracy,AUC
 from tensorflow.python.keras.callbacks import TensorBoard
-from sklearn.metrics import confusion_matrix
+
+from utilities.plot_lib import plot_confusion_matrix,plt_statistic
 
 
 
@@ -62,8 +63,10 @@ def LSTM_model(modelConfig):
                 model.add(LSTM(item['units'],return_sequences = item['return_sequence'],activation=item['activation']))
 
         # add dense layers to model from modelConfig
-        else :
+        elif item['layer'] == 'Dense' :
             model.add(Dense(item['units'],activation=item['activation']))
+        else:
+            model.add(Dropout(item['drop_perc']))
         
 
     # add last layer 
@@ -127,7 +130,7 @@ def getDataSet(classes,datasetPath,sequence_length,test_size):
     y = to_categorical(labels).astype(int)
 
     # split DataSet to train test 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size,random_state=0)
 
     end_time = time.perf_counter()
     logging.info(f'It took {end_time- start_time :0.2f} second(s) to complete.')
@@ -140,7 +143,7 @@ def getDataSet(classes,datasetPath,sequence_length,test_size):
 
 
 
-def Train(model,model_path,X_train,y_train,epochs,optimizer,loss,metric,logsPath):
+def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,metric,logsPath):
     '''
     This function is to train predefiend model and save training statistic 
 
@@ -181,76 +184,17 @@ def Train(model,model_path,X_train,y_train,epochs,optimizer,loss,metric,logsPath
 
 
     # start training
-    model.fit(X_train, y_train, epochs= epochs, callbacks=[tb_callback])
+    history =model.fit(X_train, y_train, epochs= epochs, callbacks=[tb_callback],batch_size=64    ,validation_data = (X_val,y_val))
 
     # save model weights after training
     model.save("models/weights.h5")
 
 
-    return model
+    return model,history
 
 
 
 
-# helper function to plot confusion matrix 
-def plot_confusion_matrix(y_true, y_pred, classes,
-                          normalize=False,
-                          title=None,
-                          cmap=plt.cm.Blues,
-                          size=None):
-    """ (Copied from sklearn website)
-    This function prints and plots the confusion matrix.
-    Normalization can be applied by setting `normalize=True`.
-    """
-    if not title:
-        if normalize:
-            title = 'Normalized confusion matrix'
-        else:
-            title = 'Confusion matrix, without normalization'
-
-    # Compute confusion matrix
-    cm = confusion_matrix(y_true, y_pred)
-    # Only use the labels that appear in the data
-
-
-    if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-        logging.info("Display normalized confusion matrix ...")
-    else:
-        logging.info('Display confusion matrix without normalization ...')
-
-
-    fig, ax = plt.subplots()
-    if size is None:
-        size = (12, 8)
-    fig.set_size_inches(size[0], size[1])
-
-    im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
-    ax.figure.colorbar(im, ax=ax)
-    # We want to show all ticks...
-    ax.set(xticks=np.arange(cm.shape[1]),
-           yticks=np.arange(cm.shape[0]),
-           # ... and label them with the respective list entries
-           xticklabels=classes, yticklabels=classes,
-           title=title,
-           ylabel='True label',
-           xlabel='Predicted label')
-    ax.set_ylim([-0.5, len(classes)-0.5])
-
-    # Rotate the tick labels and set their alignment.
-    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
-             rotation_mode="anchor")
-
-    # Loop over data dimensions and create text annotations.
-    fmt = '.2f' if normalize else 'd'
-    thresh = cm.max() / 2.
-    for i in range(cm.shape[0]):
-        for j in range(cm.shape[1]):
-            ax.text(j, i, format(cm[i, j], fmt),
-                    ha="center", va="center",
-                    color="white" if cm[i, j] > thresh else "black")
-    fig.tight_layout()
-    return ax, cm
 
 
     
@@ -258,7 +202,7 @@ def plot_confusion_matrix(y_true, y_pred, classes,
 
 
 
-def evaluate_model(model, classes, X_train, X_test, y_train, y_test):
+def evaluate_model(model,history, classes, X_train, X_test, y_train, y_test):
     '''
     This function is to  Evaluate accuracy and time cost 
         Args : 
@@ -293,9 +237,24 @@ def evaluate_model(model, classes, X_train, X_test, y_train, y_test):
     logging.info("Time cost for predicting on train and test data is: "
           "{:.5f} seconds".format(average_time))
 
+
+    fig = plt.figure()
+
+    gs = fig.add_gridspec(2,2)
+    ax1 = fig.add_subplot(gs[0, 0])
+    ax2 = fig.add_subplot(gs[0, 1])
+    ax3 = fig.add_subplot(gs[1, :])
+    
+    
+    plt_statistic(history,ax1,'loss')
+
     # Plot confucion_matrix (TP,TN,FP,FN)
-    plot_confusion_matrix(
-        y_test, y_test_predict, classes, normalize=False, size=(12, 8))
+    plot_confusion_matrix(ax2,
+        y_test, y_test_predict, classes, normalize=False)
+
+    plt_statistic(history,ax3,'binary_accuracy',True)
+
+  
     plt.show()
 
 
@@ -324,20 +283,21 @@ if __name__ == "__main__":
     if metric == 'binary':
         metric = BinaryAccuracy()
     else :
-        metric = Accuracy()
+        metric = AUC()
 
 
     # get training data from dataset folder
-    X_train,X_test,y_train,y_test = getDataSet(classes,dataset_path,sequence_length,test_size)
+    X_train,X_val,y_train,y_val = getDataSet(classes,dataset_path,sequence_length,test_size)
 
     # get training model
     lstm = LSTM_model(model_config)
 
     # train model on our data
-    model =Train(lstm,saved_weights_path,X_train,y_train,epochs,optimizer,loss,metric,log_path)
+    model,history =Train(lstm,saved_weights_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,metric,log_path)
 
+    
     # evaluate model on test data
-    evaluate_model(model,classes,X_train,X_test,y_train,y_test)
+    evaluate_model(model,history,classes,X_train,X_val,y_train,y_val)
     
 
 

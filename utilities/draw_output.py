@@ -129,6 +129,7 @@ def draw_connections(frame, keypoints, edges, threshold):
             cv2.line(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0,0,255), 4)
 
 
+
 def draw_features(frame,keypoints,boundingBoxes,edges=EDGES,threshold=0.5):
     '''
     This function is used to draw bounding boxes and keypoints on images

@@ -15,14 +15,15 @@ import tensorflow_hub as hub
 import cv2
 import os 
 import numpy as np
-from draw_output import *
+from utilities.draw_output import draw_features
+
 import yaml
 from yaml import SafeLoader
 import argparse
 
 
 # get configuration file 
-with open('../config.yaml') as f:
+with open('/home/ash/Documents/icdl_detection/config.yaml') as f:
     config = yaml.load(f, Loader=SafeLoader)
 
 parser = argparse.ArgumentParser(description="create dataset from webcam feed or from saved videos on disk")
@@ -243,11 +244,11 @@ def createDatasetFolders(to,classes,no_sequences=30):
 def main(config):
     classes = config['classes']
     model_directory = config['model_directory']
-    data_directory= config['data_directory']
+    data_directory= "/home/ash/Documents/icdl_detection/DATA_SET"
     sequence_length= config['sequence_length']
     no_sequences = config['no_sequences']
     createDatasetFolders(to=data_directory,classes=classes)
-    poseModel = hub.load(model_directory)
+    poseModel = hub.load("/home/ash/Documents/icdl_detection/models/movenet_multipose_lightning_1")
     net = poseModel.signatures['serving_default']
     input = args.input
     makeDataSet(model =net,to =data_directory,classes = classes,sequence_length = sequence_length,no_sequences = no_sequences ,vids_folder=input)

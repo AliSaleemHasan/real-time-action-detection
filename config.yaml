@@ -1,13 +1,13 @@
 #General SETTINGS
 data_directory: DATA_SET #DataSet Directory
-classes: [posing, not_posing] #Classes names in Dataset
+classes: [cheating, not_cheating] #Classes names in Dataset
 no_classes: 2 #Number of classes in dataset
 test_size: 0.2 #Size of testset
-theshold: 0.5 #Threshold for kepoints and boundingBoxes
+theshold: 0.4 #Threshold for kepoints and boundingBoxes
 model_directory: models/movenet_multipose_lightning_1 #Pose estimation model directory
 sequence_length: 30 # number of frames in each video
 no_sequences: 30 # number of videos in each class
-epochs: 2000 #number of epochs to train on
+epochs: 500 #number of epochs to train on
 optimizer: Adam #Adam , RMSprops .. etc
 loss: binary_crossentropy #binary_crossentropy, categorical_crossentropy...
 log_path: "logs" # where to save logs after training
@@ -18,18 +18,17 @@ frame_distance: 1 #distance between frames that we want to take
 #LSTM model configuration
 model:
   - layer: LSTM
-    units: 64
+    units: 128
     return_sequence: True
     activation: relu
     input_shape: (30,51)
   - layer: LSTM
     units: 128
-    return_sequence: True
-    activation: relu
-  - layer: LSTM
-    units: 64
     return_sequence: False
     activation: relu
+    input_shape: (30,51)
+  - layer: "Dropout"
+    drop_perc: 0.2
   - layer: Dense
     units: 64
     activation: relu

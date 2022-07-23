@@ -3,4 +3,5 @@
 *__pycache__
 /DATA_SET/*
 /logs/train
-
+test.mp4
+/logs/validation

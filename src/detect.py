@@ -9,20 +9,28 @@ This file is applying our Action detection on videos (from webcam or saved video
 '''
 
 
-
-import yaml
-from yaml.loader import SafeLoader
-import argparse
-
 import cv2
-from sympy import sequence
-import tensorflow_hub as hub
-from train import LSTM_model
-from utilities.data_set import extractFeatures
-from utilities.draw_output import draw_features ,EDGES
+import yaml
+import argparse
 import numpy as np
+import tensorflow_hub as hub
+from yaml.loader import SafeLoader
+from train import LSTM_model
 
-from utilities.tracker import Tracker
+
+if True:  # Include project path
+    import sys
+    import os
+    ROOT = os.path.dirname(os.path.abspath(__file__))+"/../"
+    CURR_PATH = os.path.dirname(os.path.abspath(__file__))+"/"
+    sys.path.append(ROOT)
+    from utilities.draw_output import draw_features ,EDGES
+    from utilities.create_data_set import extractFeatures
+    from utilities.tracker import Tracker
+
+
+
+
 
 
 

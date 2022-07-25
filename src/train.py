@@ -8,9 +8,7 @@ This file is for creating model and train it using tensorFlow
 
 '''
 
-import os 
 import yaml
-import sys
 import time
 import logging
 import numpy as np
@@ -21,7 +19,17 @@ from sklearn.model_selection import train_test_split
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.layers import LSTM, Dense,Dropout
 
-from utilities.plot_lib import plot_confusion_matrix,plt_statistic
+
+if True:  # Include project path
+    import sys
+    import os
+    ROOT = os.path.dirname(os.path.abspath(__file__))+"/../"
+    CURR_PATH = os.path.dirname(os.path.abspath(__file__))+"/"
+    sys.path.append(ROOT)
+    from utilities.plot_lib import plot_confusion_matrix,plt_statistic
+
+
+
 
 
 

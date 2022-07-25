@@ -1,7 +1,7 @@
 '''
     Main Class for DataSet operations including:
     
-    1- makeDataSet(model,to,classes,sequence_length,no_sequences,frame_delay,vids_folder)
+    1- createDataSet(model,to,classes,sequence_length,no_sequences,frame_delay,vids_folder)
    
     2- extractFeatures(frame,model):
 
@@ -10,6 +10,7 @@
     4- createDatasetFolders(to,classes)
 '''
 
+from random import random
 import tensorflow as tf
 import tensorflow_hub as hub
 import cv2
@@ -109,7 +110,7 @@ def frames_extraction(video_path,sequence_length = 30):
     return frames_list 
 
 
-def makeDataSet(model,to,classes,sequence_length=30,no_sequences=1,frame_delay = 1,vids_folder= None):
+def createDataSet(model,to,classes,sequence_length=30,no_sequences=1,frame_delay = 1,vids_folder= None):
     '''
         This function will get features from videos (from webcam or exsited videos) as np.array
         and saves it in 'to' folder.
@@ -216,7 +217,7 @@ def makeDataSet(model,to,classes,sequence_length=30,no_sequences=1,frame_delay =
 
 
 
-def createDatasetFolders(to,classes,no_sequences=30):
+def createDatasetFolders(to,classes,no_sequences=30,randomness = 4):
     '''
     This function is to create directories which will organaize saved DataSet in directories 
 
@@ -224,6 +225,7 @@ def createDatasetFolders(to,classes,no_sequences=30):
         to: distenation directory
         classes: dataset classes
         no_sequences: number of videos for each action
+        randomness : data augmentation for (randomness) times
     
     '''
 
@@ -237,7 +239,9 @@ def createDatasetFolders(to,classes,no_sequences=30):
         for index in range(no_sequences):
 
             # create no_sequence folders for each action inside action folder 
-            os.makedirs(os.path.join(to,action,str(index)),exist_ok=True)
+            for random_index in range(randomness):
+                os.makedirs(os.path.join(to,action,str((index * randomness) + random_index)),exist_ok=True)
+
 
       
 
@@ -247,11 +251,11 @@ def main(config):
     data_directory= "/home/ash/Documents/icdl_detection/DATA_SET"
     sequence_length= config['sequence_length']
     no_sequences = config['no_sequences']
-    createDatasetFolders(to=data_directory,classes=classes)
-    poseModel = hub.load("/home/ash/Documents/icdl_detection/models/movenet_multipose_lightning_1")
-    net = poseModel.signatures['serving_default']
-    input = args.input
-    makeDataSet(model =net,to =data_directory,classes = classes,sequence_length = sequence_length,no_sequences = no_sequences ,vids_folder=input)
+    createDatasetFolders(to=data_directory,classes=classes,no_sequences=no_sequences)
+    # poseModel = hub.load("/home/ash/Documents/icdl_detection/models/movenet_multipose_lightning_1")
+    # net = poseModel.signatures['serving_default']
+    # input = args.input
+    # createDataSet(model =net,to =data_directory,classes = classes,sequence_length = sequence_length,no_sequences = no_sequences ,vids_folder=input)
 
 
 if __name__ == '__main__':

@@ -20,8 +20,6 @@ from keras.utils.np_utils import to_categorical
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.layers import LSTM, Dense,Dropout
-from tensorflow.python.keras.metrics import BinaryAccuracy,AUC
-from tensorflow.python.keras.callbacks import TensorBoard
 
 from utilities.plot_lib import plot_confusion_matrix,plt_statistic
 
@@ -143,7 +141,7 @@ def getDataSet(classes,datasetPath,sequence_length,test_size):
 
 
 
-def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,metric,logsPath):
+def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,metric):
     '''
     This function is to train predefiend model and save training statistic 
 
@@ -156,7 +154,6 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,met
             optimizer: binary_crossentropy, Adam, RMSpros ...etc
             loss: Probabilistic losses (binary_crossentropy, binary_crossentropy ...etc)
             metric: Accuracy, BinaryAccuracy, BinaryAccuracy, SparseCategoricalAccuracy ...etc
-            logsPath: path of tensorflow logs folder 
         
         Return : trained model 
 
@@ -173,18 +170,14 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,met
         return model
 
     
-    # get logs dir path 
-    log_dir = os.path.join(logsPath)
 
-    # define tensorboard callback to save logs in log dir while training 
-    tb_callback = TensorBoard(log_dir=log_dir)
 
     # compile the model
     model.compile(optimizer, loss, metrics=[metric])
 
 
     # start training
-    history =model.fit(X_train, y_train, epochs= epochs, callbacks=[tb_callback],batch_size=64    ,validation_data = (X_val,y_val))
+    history =model.fit(X_train, y_train, epochs= epochs,batch_size=64    ,validation_data = (X_val,y_val))
 
     # save model weights after training
     model.save("models/weights.h5")
@@ -252,7 +245,7 @@ def evaluate_model(model,history, classes, X_train, X_test, y_train, y_test):
     plot_confusion_matrix(ax2,
         y_test, y_test_predict, classes, normalize=False)
 
-    plt_statistic(history,ax3,'binary_accuracy',True)
+    plt_statistic(history,ax3,'accuracy',True)
 
   
     plt.show()
@@ -276,14 +269,9 @@ if __name__ == "__main__":
     epochs = config['epochs']
     optimizer = config['optimizer']
     loss = config['loss']
-    log_path = config['log_path']
     model_config= config['model']
     saved_weights_path=config['saved_weights_path']
-    metric = config['metric']
-    if metric == 'binary':
-        metric = BinaryAccuracy()
-    else :
-        metric = AUC()
+    metric = 'accuracy'
 
 
     # get training data from dataset folder
@@ -293,7 +281,7 @@ if __name__ == "__main__":
     lstm = LSTM_model(model_config)
 
     # train model on our data
-    model,history =Train(lstm,saved_weights_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,metric,log_path)
+    model,history =Train(lstm,saved_weights_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,metric)
 
     
     # evaluate model on test data

@@ -5,18 +5,20 @@
    
     2- extractFeatures(frame,model):
 
+ 
+    3- deleteNonUsedVids(model,path,sequence_length,keypoint_score,min_keypoints ):
+
     3- frames_extraction(video_path,sequence_length )
 
     4- createDatasetFolders(to,classes)
 '''
 
-from random import random
 import tensorflow as tf
 import tensorflow_hub as hub
 import cv2
 import os 
 import numpy as np
-from utilities.draw_output import draw_features
+from draw_output import draw_features
 
 import yaml
 from yaml import SafeLoader
@@ -63,6 +65,77 @@ def extractFeatures(frame,model):
     return keypoints,bounding_boxes
 
 
+
+
+def deleteNonUsedVids(model,path,sequence_length,keypoint_score= 0.35,min_keypoints =3):
+    '''
+    This function is to remove videos from dataset that does not have 
+    enough keypoints to train on it
+
+    Args:
+        model: used pose estimation model
+        path: path of dataset folder that we want to clean it 
+        sequence_length 
+        keypoint_score: minimum threshold for keypoint to get considered 
+        min_keypoints: minimum number of keypoints to take skeleton
+    '''
+
+    # list of videos that not have enough skeletons in it and will be deleted
+    to_delete = []
+
+    for vid in os.listdir(os.path.join(path)):
+        cap = cv2.VideoCapture(os.path.join(path,vid))
+
+        # Get the total number of frames in the video.
+        video_frames_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+        # Calculate the the interval after which frames will be added to the list.
+        skip_frames_window = max(int(video_frames_count/sequence_length), 1)
+
+        # skeleton counter in each video 
+        skels_counter = 0
+
+        for frame_num in range(sequence_length):
+            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_num * skip_frames_window)
+            success , frame = cap.read()
+            if not success :
+                break 
+            keypoints,_ = extractFeatures(frame,model)
+
+            for person in keypoints:
+
+                counter = 0
+                for keypoint in person:
+
+                    # keypoint[2]  is score of keypoint
+                    # if score of keypoint > score threshold then we will consider it
+                    if keypoint[2] >= keypoint_score:
+                        counter +=1
+
+                    # if we considered more than num_of_keypoints then the skeleton is valid
+                    if counter >=min_keypoints :
+
+                        # save valid skeleton index
+                        skels_counter += 1
+                        # no need to do this for the rest of keypoints for this skeleton
+                        break
+        
+        # add video into to_delete if number of frames without skels are  equal to sequence length
+        if skels_counter  <=  sequence_length -1:
+            to_delete.append(os.path.join(path,vid))
+    
+    for vid in to_delete:
+        os.remove(vid)
+
+
+
+
+        
+
+            
+
+    
+
 def frames_extraction(video_path,sequence_length = 30):
     '''
     This function will extract the required frames from a video after resizing and normalizing them.
@@ -70,6 +143,8 @@ def frames_extraction(video_path,sequence_length = 30):
         video_path: The path of the video in the disk, whose frames are to be extracted.
     Returns:
         frames_list: A list containing  frames of the video.
+
+    PS: videos must be same length 
     '''
 
     # Declare a list to store video frames.
@@ -259,7 +334,13 @@ def main(config):
 
 
 if __name__ == '__main__':
-    main(config)
+    poseModel = hub.load("/home/ash/Documents/icdl_detection/models/movenet_multipose_lightning_1")
+    net = poseModel.signatures['serving_default']
+    deleteNonUsedVids(net,"vids/cheating",30)
+    deleteNonUsedVids(net,"vids/not_cheating",30)
+
+    # main(config)
+
 
 
 

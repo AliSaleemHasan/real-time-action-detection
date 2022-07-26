@@ -12,7 +12,7 @@ optimizer: Adam #Adam , RMSprops .. etc
 loss: binary_crossentropy #binary_crossentropy, categorical_crossentropy...
 log_path: "logs" # where to save logs after training
 saved_weights_path: "models/weights.h5"
-frame_distance: 1 #distance between frames that we want to take
+frame_distance: 4 #distance between frames that we want to take
 
 #LSTM model configuration
 model:

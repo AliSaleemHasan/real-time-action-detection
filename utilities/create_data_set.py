@@ -18,7 +18,7 @@ import tensorflow_hub as hub
 import cv2
 import os 
 import numpy as np
-from draw_output import draw_features
+from utilities.draw_output import draw_features
 
 import yaml
 from yaml import SafeLoader

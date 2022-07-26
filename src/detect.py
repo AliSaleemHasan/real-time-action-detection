@@ -41,12 +41,11 @@ with open('config.yaml') as f:
 
 parser = argparse.ArgumentParser(description="detect on video or webcam feed")
 parser.add_argument("--input",default = None,help="input of detection \n None for webcam , videoPath for video or rtsp link")
-parser.add_argument('--distance',default=config['frame_distance'],type=int,help="distance between frames that we want to take")
 args = parser.parse_args()
 
 
 
-def single_person_detection(sequence,frame,action_model,sequence_length,actionMap,output_location,id):
+def single_person_detection(sequence,frame,action_model,sequence_length,actionMap,output_location,id,prev_text):
     '''
     This function is to perform Action detection for just one person 
 
@@ -62,6 +61,9 @@ def single_person_detection(sequence,frame,action_model,sequence_length,actionMa
             skel_seq : list of this person human in multiple frames
 
     '''
+    text = prev_text
+    # get frame y and x to put text in correct place according to frame size
+    y,x = frame.shape[:2]
 
 
     # perform action detection only if there 
@@ -74,16 +76,16 @@ def single_person_detection(sequence,frame,action_model,sequence_length,actionMa
         # save output action in text variable
         text = actionMap[np.argmax(res)]
 
-        # get frame y and x to put text in correct place according to frame size
-        y,x = frame.shape[:2]
-
+       
         # save predection output with person id to text 
         text += " " + str(id + 1)
 
-        if(output_location[4] > 0):
-        # put output on frame
-          cv2.putText(frame, text, (int(output_location[1] * x),int((output_location[0] * y ) -10)), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 2, cv2.LINE_AA)
+    if(output_location[4] > 0):
+        cv2.putText(frame, text, (int(output_location[1] * x),int((output_location[0] * y ) -10)), 
+            cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 2, cv2.LINE_AA)
+    # put output on frame
+    
+    return text
 
 
         
@@ -147,7 +149,7 @@ def get_frameSequence(sequence,distance_sequence,frame_num,old_length,skeleton,f
         sequence =  distance_sequence[-sequence_length:]
     
 
-    return sequence,distance_sequence,old_length
+    return sequence,distance_sequence[-sequence_length:],old_length
     
 
 
@@ -178,6 +180,8 @@ def detect(pose_model,action_model,video_path,actions,sequence_length,frame_dist
     # boolean array of people in image 
     # if value in nth plase is True then there is a person in it
     people = [False] * 6
+
+    output= ""
 
     # list of person sequence on multiple frames
     skel_seq = [[] for i in range(6)]
@@ -248,7 +252,7 @@ def detect(pose_model,action_model,video_path,actions,sequence_length,frame_dist
             
             
             # detect on sequence
-            single_person_detection(skel_seq[key],frame,action_model,sequence_length,actionMap,box_dict[key],key)
+            output = single_person_detection(frame_sequence[key],frame,action_model,sequence_length,actionMap,box_dict[key],key,output)
 
         # draw features (keypoints, boundingBoxes and output of detection if found)
         draw_features(frame,keypoints,boundingBoxes,EDGES)
@@ -276,7 +280,15 @@ def main(config):
     sequence_length= config['sequence_length']
     saved_weights_path=config['saved_weights_path']
     modelConfig = config['model']  
-    frame_distance = args.distance
+    frame_distance=0
+    if os.path.exists("DATA_SET/sequence_rate.txt"):
+        with open("DATA_SET/sequence_rate.txt",'r') as f:
+            lines =f.readlines()
+            frame_distance=max(int(lines[0])-1 ,1)
+    
+    
+
+
     input = args.input
 
 

@@ -5,3 +5,5 @@
 /logs/train
 test.mp4
 /logs/validation
+/vids
+models/*

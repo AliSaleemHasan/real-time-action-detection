@@ -159,6 +159,7 @@ def frames_extraction(video_path,sequence_length = 30):
     # Calculate the the interval after which frames will be added to the list.
     skip_frames_window = max(int(video_frames_count/sequence_length), 1)
 
+
     # Iterate through the Video Frames.
     for frame_counter in range(sequence_length):
 
@@ -182,7 +183,7 @@ def frames_extraction(video_path,sequence_length = 30):
     video_reader.release()
 
     # Return the frames list.
-    return frames_list 
+    return frames_list , skip_frames_window
 
 
 def createDataSet(model,to,classes,sequence_length=30,no_sequences=1,frame_delay = 1,vids_folder= None):
@@ -267,15 +268,22 @@ def createDataSet(model,to,classes,sequence_length=30,no_sequences=1,frame_delay
 
     # get videos from vids_folder one by one
     else:
-
+        
+        sequence_rate = 0
         # loap throw all classes in dataset (cheating, notcheating ) in our case 
         for action in classes:
-
+            frame_rate = 0 
+            counter =0
             # loap throw all videos in vids_folder
             for vid_num,video in  enumerate(os.listdir(os.path.join(vids_folder,action))):
-
+                
                 # get required frame list 
-                frame_list =frames_extraction(os.path.join(vids_folder,action,str(video)))
+                frame_list,skip_frames_window =frames_extraction(os.path.join(vids_folder,action,str(video)))
+
+                frame_rate += skip_frames_window
+                counter +=1 
+
+                
 
                 # laop throw returned frame_list to get features from each frame
                 for frame_num,frame in enumerate(frame_list):
@@ -288,11 +296,20 @@ def createDataSet(model,to,classes,sequence_length=30,no_sequences=1,frame_delay
 
                     # save extracted features in features_path 
                     np.save(features_path,keypoints[0].flatten())
+            rate = max(int(frame_rate / counter),1)
+            sequence_rate += rate
+        with open('{}/sequence_rate.txt'.format(to),'w') as f:
+            f.write(str(int(sequence_rate/len(classes))))
+
+            
+            
+
+                
     
 
 
 
-def createDatasetFolders(to,classes,no_sequences=30,randomness = 4):
+def createDatasetFolders(to,_from ,classes,no_sequences=30):
     '''
     This function is to create directories which will organaize saved DataSet in directories 
 
@@ -309,13 +326,14 @@ def createDatasetFolders(to,classes,no_sequences=30,randomness = 4):
 
         # create new folder for each action if not exist
         os.makedirs(os.path.join(to,action),exist_ok=True)
+        if _from != None: 
+            no_sequences = len([name for name in os.listdir(os.path.join(_from,action))])
 
         #iterate no_sequence time to create no_sequence for each action
         for index in range(no_sequences):
 
             # create no_sequence folders for each action inside action folder 
-            for random_index in range(randomness):
-                os.makedirs(os.path.join(to,action,str((index * randomness) + random_index)),exist_ok=True)
+                os.makedirs(os.path.join(to,action,str(index)),exist_ok=True)
 
 
       
@@ -326,20 +344,20 @@ def main(config):
     data_directory= "/home/ash/Documents/icdl_detection/DATA_SET"
     sequence_length= config['sequence_length']
     no_sequences = config['no_sequences']
-    createDatasetFolders(to=data_directory,classes=classes,no_sequences=no_sequences)
-    # poseModel = hub.load("/home/ash/Documents/icdl_detection/models/movenet_multipose_lightning_1")
-    # net = poseModel.signatures['serving_default']
-    # input = args.input
-    # createDataSet(model =net,to =data_directory,classes = classes,sequence_length = sequence_length,no_sequences = no_sequences ,vids_folder=input)
+    createDatasetFolders(to=data_directory,_from="vids",classes=classes,no_sequences=no_sequences)
+    poseModel = hub.load("/home/ash/Documents/icdl_detection/models/movenet_multipose_lightning_1")
+    net = poseModel.signatures['serving_default']
+    input = args.input
+    createDataSet(model =net,to =data_directory,classes = classes,sequence_length = sequence_length,no_sequences = no_sequences ,vids_folder=input)
 
 
 if __name__ == '__main__':
-    poseModel = hub.load("/home/ash/Documents/icdl_detection/models/movenet_multipose_lightning_1")
-    net = poseModel.signatures['serving_default']
-    deleteNonUsedVids(net,"vids/cheating",30)
-    deleteNonUsedVids(net,"vids/not_cheating",30)
+    # poseModel = hub.load("/home/ash/Documents/icdl_detection/models/movenet_multipose_lightning_1")
+    # net = poseModel.signatures['serving_default']
+    # deleteNonUsedVids(net,"vids/JumpingJack",30)
+    # deleteNonUsedVids(net,"vids/Lunges",30)
 
-    # main(config)
+    main(config)
 
 
 

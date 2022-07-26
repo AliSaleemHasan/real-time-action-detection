@@ -10,6 +10,7 @@ This file is for creating model and train it using tensorFlow
 
 import yaml
 import time
+import pickle
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
@@ -26,7 +27,7 @@ if True:  # Include project path
     ROOT = os.path.dirname(os.path.abspath(__file__))+"/../"
     CURR_PATH = os.path.dirname(os.path.abspath(__file__))+"/"
     sys.path.append(ROOT)
-    from utilities.plot_lib import plot_confusion_matrix,plt_statistic
+    from utils.plot_lib import plot_confusion_matrix,plt_statistic
 
 
 
@@ -136,7 +137,7 @@ def getDataSet(classes,datasetPath,sequence_length,test_size):
     y = to_categorical(labels).astype(int)
 
     # split DataSet to train test 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size,random_state=0)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size,random_state=41)
 
     end_time = time.perf_counter()
     logging.info(f'It took {end_time- start_time :0.2f} second(s) to complete.')
@@ -191,7 +192,12 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,met
     model.save("models/weights.h5")
 
 
-    return model,history
+    with open('models/history.history', 'wb') as file_pi:
+        pickle.dump(history.history, file_pi)
+    
+
+
+    return model
 
 
 
@@ -211,10 +217,16 @@ def evaluate_model(model,history, classes, X_train, X_test, y_train, y_test):
             classes : dataset classes
             tr_X,tr_Y,te_X,te_Y : train's and test's (x and y)
     
+    
     '''
-    # start by recording time
-    t0 = time.time()
 
+    fig = plt.figure()
+
+    
+
+
+    t0 = time.time()
+    
     # accuracy on train set
     model.evaluate(X_train, y_train)
 
@@ -236,22 +248,25 @@ def evaluate_model(model,history, classes, X_train, X_test, y_train, y_test):
     # Time cost
     average_time = (time.time() - t0) / (len(y_train) + len(y_test))
     logging.info("Time cost for predicting on train and test data is: "
-          "{:.5f} seconds".format(average_time))
+        "{:.5f} seconds".format(average_time))
 
-
-    fig = plt.figure()
-
+    
     gs = fig.add_gridspec(2,2)
     ax1 = fig.add_subplot(gs[0, 0])
     ax2 = fig.add_subplot(gs[0, 1])
     ax3 = fig.add_subplot(gs[1, :])
+
+        # Plot confucion_matrix (TP,TN,FP,FN)
+    plot_confusion_matrix(ax2,
+        y_test, y_test_predict, classes, normalize=False)
+    
+   
+
     
     
     plt_statistic(history,ax1,'loss')
 
-    # Plot confucion_matrix (TP,TN,FP,FN)
-    plot_confusion_matrix(ax2,
-        y_test, y_test_predict, classes, normalize=False)
+ 
 
     plt_statistic(history,ax3,'accuracy',True)
 
@@ -281,19 +296,19 @@ if __name__ == "__main__":
     saved_weights_path=config['saved_weights_path']
     metric = 'accuracy'
 
-
+    history = pickle.load(open('models/history.history','rb'))
+    model = None
+    
     # get training data from dataset folder
     X_train,X_val,y_train,y_val = getDataSet(classes,dataset_path,sequence_length,test_size)
 
-    # get training model
     lstm = LSTM_model(model_config)
-
     # train model on our data
-    model,history =Train(lstm,saved_weights_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,metric)
+    model =Train(lstm,saved_weights_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,metric)
 
-    
-    # evaluate model on test data
+        # evaluate model on test data
     evaluate_model(model,history,classes,X_train,X_val,y_train,y_val)
+
     
 
 

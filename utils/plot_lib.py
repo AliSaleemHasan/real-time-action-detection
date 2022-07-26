@@ -4,8 +4,8 @@ import numpy as np
 
 
 def plt_statistic(history,ax,metric,title_below = False):
-    ax.plot(history.history[metric])
-    ax.plot(history.history['val_{}'.format(metric)])
+    ax.plot(history[metric])
+    ax.plot(history['val_{}'.format(metric)])
     if title_below == True:
       ax.set_title('model {}'.format(metric),y = -0.01)
     else:

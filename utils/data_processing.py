@@ -14,24 +14,11 @@
 '''
 
 import tensorflow as tf
-import tensorflow_hub as hub
 import cv2
-import os 
 import numpy as np
-from utilities.draw_output import draw_features
-
-import yaml
-from yaml import SafeLoader
-import argparse
+import os 
 
 
-# get configuration file 
-with open('/home/ash/Documents/icdl_detection/config.yaml') as f:
-    config = yaml.load(f, Loader=SafeLoader)
-
-parser = argparse.ArgumentParser(description="create dataset from webcam feed or from saved videos on disk")
-parser.add_argument("--input",default = None,help="where to collect dataset from \n None for webcam , videoFolderPath for videos ")
-args = parser.parse_args()
 
 
 def extractFeatures(frame,model):
@@ -227,9 +214,8 @@ def createDataSet(model,to,classes,sequence_length=30,no_sequences=1,frame_delay
                         break
 
                     # extract features from each frame 
-                    keypoints, bounding_boxes = extractFeatures(frame,model)
+                    keypoints, _ = extractFeatures(frame,model)
 
-                    draw_features(frame,keypoints,boundingBoxes = bounding_boxes)
 
                     # add text which indecates starting of new video collection
                     if frame_num == 0:
@@ -337,28 +323,6 @@ def createDatasetFolders(to,_from ,classes,no_sequences=30):
 
 
       
-
-def main(config):
-    classes = config['classes']
-    model_directory = config['model_directory']
-    data_directory= "/home/ash/Documents/icdl_detection/DATA_SET"
-    sequence_length= config['sequence_length']
-    no_sequences = config['no_sequences']
-    createDatasetFolders(to=data_directory,_from="vids",classes=classes,no_sequences=no_sequences)
-    poseModel = hub.load("/home/ash/Documents/icdl_detection/models/movenet_multipose_lightning_1")
-    net = poseModel.signatures['serving_default']
-    input = args.input
-    createDataSet(model =net,to =data_directory,classes = classes,sequence_length = sequence_length,no_sequences = no_sequences ,vids_folder=input)
-
-
-if __name__ == '__main__':
-    # poseModel = hub.load("/home/ash/Documents/icdl_detection/models/movenet_multipose_lightning_1")
-    # net = poseModel.signatures['serving_default']
-    # deleteNonUsedVids(net,"vids/JumpingJack",30)
-    # deleteNonUsedVids(net,"vids/Lunges",30)
-
-    main(config)
-
 
 
 

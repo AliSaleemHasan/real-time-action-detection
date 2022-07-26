@@ -24,15 +24,9 @@ if True:  # Include project path
     ROOT = os.path.dirname(os.path.abspath(__file__))+"/../"
     CURR_PATH = os.path.dirname(os.path.abspath(__file__))+"/"
     sys.path.append(ROOT)
-    from utilities.draw_output import draw_features ,EDGES
-    from utilities.create_data_set import extractFeatures
-    from utilities.tracker import Tracker
-
-
-
-
-
-
+    from utils.draw_output import draw_features ,EDGES
+    from utils.data_processing import extractFeatures
+    from utils.tracker import Tracker
 
 
 # get configuration file 

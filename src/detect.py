@@ -45,7 +45,7 @@ args = parser.parse_args()
 
 
 
-def single_person_detection(sequence,frame,action_model,sequence_length,actionMap,output_location,id,prev_text):
+def single_person_detection(sequence,frame,action_model,sequence_length,actionMap,output_location,id,prev_text,seq_has_changed ):
     '''
     This function is to perform Action detection for just one person 
 
@@ -68,7 +68,7 @@ def single_person_detection(sequence,frame,action_model,sequence_length,actionMa
 
     # perform action detection only if there 
     # is {sequence_length} number of skeleton in skel_seq
-    if len(sequence) == sequence_length:
+    if len(sequence) == sequence_length and seq_has_changed == True:
 
         # get results from model
         res = action_model.predict(np.expand_dims(sequence,axis=0))[0]
@@ -119,6 +119,7 @@ def get_frameSequence(sequence,distance_sequence,frame_num,old_length,skeleton,f
 
     ''' 
 
+    has_changed = False
 
     # append skeleton to old sequence
     sequence.append(skeleton)
@@ -128,10 +129,11 @@ def get_frameSequence(sequence,distance_sequence,frame_num,old_length,skeleton,f
     # take just last 30 skeletons of old sequence
     sequence = sequence[-sequence_length:]
 
+
     # check if we reach the desired skeleton to save in distance sequence
     if frame_num % frame_distance == 0 :
-
         # save desired skeleton on distance sequence
+        has_changed = True
         distance_sequence.append(skeleton)
     
     # get new length of distance_sequence to check if new skeleton is added to it or none
@@ -149,7 +151,7 @@ def get_frameSequence(sequence,distance_sequence,frame_num,old_length,skeleton,f
         sequence =  distance_sequence[-sequence_length:]
     
 
-    return sequence,distance_sequence[-sequence_length:],old_length
+    return sequence,distance_sequence[-sequence_length:],old_length,has_changed
     
 
 
@@ -181,7 +183,7 @@ def detect(pose_model,action_model,video_path,actions,sequence_length,frame_dist
     # if value in nth plase is True then there is a person in it
     people = [False] * 6
 
-    output= ""
+    output= [""] * 6
 
     # list of person sequence on multiple frames
     skel_seq = [[] for i in range(6)]
@@ -245,14 +247,14 @@ def detect(pose_model,action_model,video_path,actions,sequence_length,frame_dist
                 frame_sequence[key]=[]
 
             # get sequences for each person in image
-            skel_seq[key],frame_sequence[key],old_length=get_frameSequence(skel_seq[key],frame_sequence[key],frame_num,old_length,value.flatten(),frame_distance,sequence_length)
+            skel_seq[key],frame_sequence[key],old_length,has_changed=get_frameSequence(skel_seq[key],frame_sequence[key],frame_num,old_length,value.flatten(),frame_distance,sequence_length)
             
             # make old_people = new_people
             people[key]= new_people[key]
             
             
             # detect on sequence
-            output = single_person_detection(frame_sequence[key],frame,action_model,sequence_length,actionMap,box_dict[key],key,output)
+            output[key] = single_person_detection(frame_sequence[key],frame,action_model,sequence_length,actionMap,box_dict[key],key,output[key],has_changed)
 
         # draw features (keypoints, boundingBoxes and output of detection if found)
         draw_features(frame,keypoints,boundingBoxes,EDGES)

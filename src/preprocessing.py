@@ -9,6 +9,7 @@ import yaml
 from yaml import SafeLoader
 
 
+
 if True:  # Include project path
     import sys
     import os
@@ -16,6 +17,9 @@ if True:  # Include project path
     CURR_PATH = os.path.dirname(os.path.abspath(__file__))+"/"
     sys.path.append(ROOT)
     from utils.data_processing import createDataSet,createDatasetFolders,deleteNonUsedVids
+    from utils.FeatureGenerator import FeatureGenerator
+    from utils.tracker import Tracker
+
 
 
 
@@ -48,13 +52,15 @@ def main(config):
     input = args.input
     poseModel = hub.load(model_directory)
     net = poseModel.signatures['serving_default']
+    fg = FeatureGenerator()
+    tracker = Tracker()
         
     if del_nonUsed =="True":
-        deleteNonUsedVids(net,input,sequence_length=sequence_length)
+        deleteNonUsedVids(net,input,sequence_length=sequence_length,featureGenerator=fg)
     else:
-        createDatasetFolders(to=data_directory,_from=input,classes=classes,no_sequences=no_sequences)
+        createDatasetFolders(to=data_directory,_from=input,classes=classes,augmentation=4,no_sequences=no_sequences)
        
-        createDataSet(model =net,to =data_directory,classes = classes,sequence_length = sequence_length,no_sequences = no_sequences ,vids_folder=input)
+        createDataSet(model =net,to =data_directory,classes = classes,featureGenerator=fg,tracker = tracker,augmentation=4,sequence_length = sequence_length,no_sequences = no_sequences ,vids_folder=input)
 
 
 if __name__ == '__main__':

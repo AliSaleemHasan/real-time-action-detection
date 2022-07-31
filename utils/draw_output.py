@@ -148,6 +148,8 @@ def draw_features(frame,keypoints,boundingBoxes,edges=EDGES,threshold=0.5):
 
         # drawing bounding box just if we want to 
         if boundingBoxes.size != 0:
-            draw_boundingBoxes(frame,boundingBoxes,threshold)
+            draw_boundingBoxes(frame,boundingBoxes,threshold=threshold)
+
+
     
 

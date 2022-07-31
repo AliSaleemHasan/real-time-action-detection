@@ -24,8 +24,8 @@ if True:  # Include project path
     ROOT = os.path.dirname(os.path.abspath(__file__))+"/../"
     CURR_PATH = os.path.dirname(os.path.abspath(__file__))+"/"
     sys.path.append(ROOT)
-    from utils.draw_output import draw_features ,EDGES
-    from utils.data_processing import extractFeatures
+    from utils.draw_output import draw_features ,EDGES,draw_boundingBoxes
+    from utils.FeatureGenerator import FeatureGenerator
     from utils.tracker import Tracker
 
 
@@ -74,9 +74,11 @@ def single_person_detection(sequence,frame,action_model,sequence_length,actionMa
         # save predection output with person id to text 
         text += " " + str(id + 1)
 
-    if(output_location[4] > 0):
-        cv2.putText(frame, text, (int(output_location[1] * x),int((output_location[0] * y ) -10)), 
-            cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 2, cv2.LINE_AA)
+
+
+    if output_location[4] > 0 and text[:8]=='cheating':
+        cv2.putText(frame, text, (int(output_location[1] * x),int((output_location[0] * y ))), 
+            cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
     # put output on frame
     
     return text
@@ -89,7 +91,7 @@ def single_person_detection(sequence,frame,action_model,sequence_length,actionMa
 
 
 
-def get_frameSequence(sequence,distance_sequence,frame_num,old_length,skeleton,frame_distance,sequence_length):
+def get_frameSequence(sequence,distance_sequence,frame_num,old_length,skeleton,frame_distance=3,sequence_length=30):
     '''
     This function is to make sure to take the right skeletons to detect on
     EX: first of all when detection started, sequence will be first 30 subsequent frame skeletons,
@@ -171,7 +173,7 @@ def detect(pose_model,action_model,video_path,actions,sequence_length,frame_dist
          
     '''
     skels_tracker = Tracker()
-
+    fg = FeatureGenerator()
 
     # boolean array of people in image 
     # if value in nth plase is True then there is a person in it
@@ -212,6 +214,7 @@ def detect(pose_model,action_model,video_path,actions,sequence_length,frame_dist
         # get frame by frame from image feed
         success,frame = cap.read()
 
+
         # add frame number
         frame_num += 1
 
@@ -220,7 +223,7 @@ def detect(pose_model,action_model,video_path,actions,sequence_length,frame_dist
             break
 
         # extract features from current frame
-        keypoints,boundingBoxes = extractFeatures(frame,pose_model)
+        keypoints,boundingBoxes = fg.extractFeatures(frame,pose_model)
 
 
         # get people dictionary , box dictionary and new_people if added
@@ -281,6 +284,8 @@ def main(config):
         with open("DATA_SET/sequence_rate.txt",'r') as f:
             lines =f.readlines()
             frame_distance=max(int(lines[0])-1 ,1)
+    frame_distance=max(frame_distance ,1)
+    
     
     
 

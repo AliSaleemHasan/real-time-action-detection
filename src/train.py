@@ -12,7 +12,10 @@ import yaml
 import time
 import pickle
 import logging
+import tensorflow as tf
 import numpy as np
+from tensorflow.python.keras.callbacks import TensorBoard
+from tensorflow.python.keras.callbacks import EarlyStopping
 import matplotlib.pyplot as plt
 from yaml.loader import SafeLoader
 from keras.utils.np_utils import to_categorical
@@ -121,6 +124,7 @@ def getDataSet(classes,datasetPath,sequence_length,test_size):
                 # get frame features that stored as np_array
                 res = np.load(os.path.join(datasetPath,action,str(videoFolder),"{}.npy".format(frame_num)))
 
+
                 # add frame features to window
                 window.append(res)
 
@@ -149,6 +153,13 @@ def getDataSet(classes,datasetPath,sequence_length,test_size):
 
 
 
+class myCallback(tf.keras.callbacks.Callback):
+  def on_epoch_end(self, epoch, logs={}):
+    if(logs.get('val_loss')<=0.03):
+      print("\nloss is less thatn 0.03 so cancelling training!")
+      self.model.stop_training = True
+
+
 
 def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,metric):
     '''
@@ -167,6 +178,12 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,met
         Return : trained model 
 
     '''
+
+
+    log_dir = os.path.join('Logs')
+    tb_callback = TensorBoard(log_dir=log_dir)
+
+    callback =myCallback()
     
     # if weights are already caclulated then load them to the model and return it 
     if os.path.exists(model_path) == True:
@@ -184,9 +201,8 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,met
     # compile the model
     model.compile(optimizer, loss, metrics=[metric])
 
-
     # start training
-    history =model.fit(X_train, y_train, epochs= epochs,batch_size=64    ,validation_data = (X_val,y_val))
+    history =model.fit(X_train, y_train, epochs= epochs,batch_size=64 ,callbacks=[tb_callback,callback]   ,validation_data = (X_val,y_val))
 
     # save model weights after training
     model.save("models/weights.h5")
@@ -303,6 +319,8 @@ if __name__ == "__main__":
     X_train,X_val,y_train,y_val = getDataSet(classes,dataset_path,sequence_length,test_size)
 
     lstm = LSTM_model(model_config)
+
+    print(lstm.summary())
     # train model on our data
     model =Train(lstm,saved_weights_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,metric)
 

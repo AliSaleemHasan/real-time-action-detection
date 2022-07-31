@@ -176,72 +176,10 @@ class Tracker(object):
         features1, features2 = np.array(features1), np.array(features2)
 
 
-        def calc_dist(p1, p2): return (
-            (p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)**0.5
-
-        def cost(sk1, sk2):
-
-            joints = np.array([num for num in range(1,12)])
-
-
-            sk1, sk2 = sk1[joints], sk2[joints]
-
-
-            # take with score more than 0.05
-            valid_idx = np.logical_and(sk1[:,2] >= self.score_thresh, sk2[:,2] >= self.score_thresh)
-
-
-
-            sk1, sk2 = sk1[valid_idx], sk2[valid_idx]
-
-
-            sum_dist, num_points = 0, int(len(sk1)/2)
-
-            # if there is no points in skeleton then the cost will be 99999
-            if num_points == 0:
-                return 99999
-
-            else:
-                # compute distance between each pair of joint
-                for i in range(num_points):
-                    idx = i * 2
-                    for j in range(2):
-                        sum_dist += calc_dist(sk1[idx:idx+2,j], sk2[idx:idx+2,j])
-                mean_dist = sum_dist / (num_points *2)
-                mean_dist /= (1.0 + 0.05*num_points)  # more points, the better
-                return mean_dist
-
-      
-                
-        # remove duplicates from current skeleton 
-        def actual_skels(skels):
-
-            distance_dict = {}
-            added = []
-            indeces = []
-            #TODO: merge all loops together 
-            for id1, f1 in enumerate(skels):
-                distance_dict[id1] = []
-                item_cost = cost(f1,f1)
-                if id1 in added:
-                    continue
-                for id2,f2 in enumerate(skels):
-                    costt = cost(f1,f2)
-                    if  abs(item_cost - costt)  < 0.05:
-                        added.append(id2)
-                        distance_dict[id1].append({'id':id2,'cost':costt})
-                    
-
-
-            for key,value in distance_dict.items():
-                if(len(value) == 0):
-                    continue
-                indeces.append(key)
-            return skels[indeces]
-
+       
         
 
-        features2 = actual_skels(features2)
+        features2 = self.actual_skels(features2)
         N = len(features2)
         # If f1i is matched to f2j and vice versa, the match is good.
         good_matches = {}
@@ -249,7 +187,7 @@ class Tracker(object):
         if n1 and n2:
 
             # dist_matrix[i][j] is the distance between features[i] and features[j]
-            dist_matrix = [[cost(f1, f2) for f2 in features2]
+            dist_matrix = [[self.cost(f1, f2) for f2 in features2]
                            for f1 in features1]
             dist_matrix = np.array(dist_matrix)
 
@@ -273,5 +211,69 @@ class Tracker(object):
 
         return good_matches , N
 
+    
+
+    def cost(self,sk1, sk2):
+
+        def calc_dist(p1, p2): return (
+         (p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)**0.5
+
+        joints = np.array([num for num in range(1,12)])
+
+
+        sk1, sk2 = sk1[joints], sk2[joints]
+
+
+        # take with score more than 0.05
+        valid_idx = np.logical_and(sk1[:,2] >= self.score_thresh, sk2[:,2] >= self.score_thresh)
+
+
+
+        sk1, sk2 = sk1[valid_idx], sk2[valid_idx]
+
+
+        sum_dist, num_points = 0, int(len(sk1)/2)
+
+        # if there is no points in skeleton then the cost will be 99999
+        if num_points == 0:
+            return 99999
+
+        else:
+            # compute distance between each pair of joint
+            for i in range(num_points):
+                idx = i * 2
+                for j in range(2):
+                    sum_dist += calc_dist(sk1[idx:idx+2,j], sk2[idx:idx+2,j])
+            mean_dist = sum_dist / (num_points *2)
+            mean_dist /= (1.0 + 0.05*num_points)  # more points, the better
+            return mean_dist
+
+      
+                
+        # remove duplicates from current skeleton 
+    def actual_skels(self,skels):
+
+        distance_dict = {}
+        added = []
+        indeces = []
+        #TODO: merge all loops together 
+        for id1, f1 in enumerate(skels):
+            distance_dict[id1] = []
+            item_cost = self.cost(f1,f1)
+            if id1 in added:
+                continue
+            for id2,f2 in enumerate(skels):
+                costt = self.cost(f1,f2)
+                if  abs(item_cost - costt)  < 0.05:
+                    added.append(id2)
+                    distance_dict[id1].append({'id':id2,'cost':costt})
+                
+
+
+        for key,value in distance_dict.items():
+            if(len(value) == 0):
+                continue
+            indeces.append(key)
+        return skels[indeces]
 
 

@@ -27,7 +27,7 @@ if True:  # Include project path
 
 
 # get configuration file 
-with open('/home/ash/Documents/icdl_detection/config.yaml') as f:
+with open('config.yaml') as f:
     config = yaml.load(f, Loader=SafeLoader)
 
 parser = argparse.ArgumentParser(description="create dataset from webcam feed or from saved videos on disk")
@@ -45,7 +45,7 @@ args = parser.parse_args()
 def main(config):
     classes = config['classes']
     model_directory = config['model_directory']
-    data_directory= "/home/ash/Documents/icdl_detection/DATA_SET"
+    data_directory= "DATA_SET"
     sequence_length= config['sequence_length']
     no_sequences = config['no_sequences']
     del_nonUsed = args.del_nonUsed
@@ -58,9 +58,9 @@ def main(config):
     if del_nonUsed =="True":
         deleteNonUsedVids(net,input,sequence_length=sequence_length,featureGenerator=fg)
     else:
-        createDatasetFolders(to=data_directory,_from=input,classes=classes,augmentation=4,no_sequences=no_sequences)
+        createDatasetFolders(to=data_directory,_from=input,classes=classes,augmentation=0,no_sequences=no_sequences)
        
-        createDataSet(model =net,to =data_directory,classes = classes,featureGenerator=fg,tracker = tracker,augmentation=4,sequence_length = sequence_length,no_sequences = no_sequences ,vids_folder=input)
+        createDataSet(model =net,to =data_directory,classes = classes,featureGenerator=fg,tracker = tracker,augmentation=0,sequence_length = sequence_length,no_sequences = no_sequences ,vids_folder=input)
 
 
 if __name__ == '__main__':

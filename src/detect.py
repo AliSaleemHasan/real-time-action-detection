@@ -64,19 +64,20 @@ def single_person_detection(sequence,frame,action_model,sequence_length,actionMa
     # is {sequence_length} number of skeleton in skel_seq
     if len(sequence) == sequence_length and seq_has_changed == True:
 
+
         # get results from model
         res = action_model.predict(np.expand_dims(sequence,axis=0))[0]
 
         # save output action in text variable
-        text = actionMap[np.argmax(res)]
+        result = 1 if res[0] >= 0.5 else 0
+        text = actionMap[result]
 
-       
+    
         # save predection output with person id to text 
         text += " " + str(id + 1)
 
 
-
-    if output_location[4] > 0 and text[:8]=='cheating':
+    if output_location[4] > 0 and text[:8]=='cheating'  :
         cv2.putText(frame, text, (int(output_location[1] * x),int((output_location[0] * y ))), 
             cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
     # put output on frame
@@ -231,7 +232,6 @@ def detect(pose_model,action_model,video_path,actions,sequence_length,frame_dist
 
 
         people = [False] * 6
-
         for key,value in dict.items():
 
 
@@ -279,12 +279,11 @@ def main(config):
     sequence_length= config['sequence_length']
     saved_weights_path=config['saved_weights_path']
     modelConfig = config['model']  
-    frame_distance=0
+    frame_distance=1
     if os.path.exists("DATA_SET/sequence_rate.txt"):
         with open("DATA_SET/sequence_rate.txt",'r') as f:
             lines =f.readlines()
             frame_distance=max(int(lines[0])-1 ,1)
-    frame_distance=max(frame_distance ,1)
     
     
     

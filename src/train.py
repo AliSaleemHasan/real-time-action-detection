@@ -15,13 +15,13 @@ import logging
 import tensorflow as tf
 import numpy as np
 from tensorflow.python.keras.callbacks import TensorBoard
-from tensorflow.python.keras.callbacks import EarlyStopping
 import matplotlib.pyplot as plt
 from yaml.loader import SafeLoader
 from keras.utils.np_utils import to_categorical
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.layers import LSTM, Dense,Dropout
+from tensorflow.python.keras.metrics import Precision
 
 
 if True:  # Include project path
@@ -80,7 +80,7 @@ def LSTM_model(modelConfig):
         
 
     # add last layer 
-    model.add(Dense(2,activation="sigmoid"))
+    model.add(Dense(1,activation="sigmoid"))
         
 
     return model
@@ -138,10 +138,12 @@ def getDataSet(classes,datasetPath,sequence_length,test_size):
     X = np.array(sequences)
 
     # y is labels 
-    y = to_categorical(labels).astype(int)
+    y = np.array(labels).astype(np.float32)
+
 
     # split DataSet to train test 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size,random_state=41)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size,random_state=15)
+
 
     end_time = time.perf_counter()
     logging.info(f'It took {end_time- start_time :0.2f} second(s) to complete.')
@@ -155,8 +157,8 @@ def getDataSet(classes,datasetPath,sequence_length,test_size):
 
 class myCallback(tf.keras.callbacks.Callback):
   def on_epoch_end(self, epoch, logs={}):
-    if(logs.get('val_loss')<=0.03):
-      print("\nloss is less thatn 0.03 so cancelling training!")
+    if(logs.get('val_loss')<=0.02):
+      print("\nloss is less thatn 0.02 so cancelling training!")
       self.model.stop_training = True
 
 
@@ -184,6 +186,7 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,met
     tb_callback = TensorBoard(log_dir=log_dir)
 
     callback =myCallback()
+    metrics = [Precision(),metric]
     
     # if weights are already caclulated then load them to the model and return it 
     if os.path.exists(model_path) == True:
@@ -191,7 +194,8 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,met
         # load weights into model
         model.load_weights(model_path)
 
-        model.compile(optimizer, loss, metrics=[metric])
+
+        model.compile(optimizer, loss, metrics=metrics)
 
         return model
 
@@ -199,7 +203,7 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,met
 
 
     # compile the model
-    model.compile(optimizer, loss, metrics=[metric])
+    model.compile(optimizer, loss, metrics=metrics)
 
     # start training
     history =model.fit(X_train, y_train, epochs= epochs,batch_size=64 ,callbacks=[tb_callback,callback]   ,validation_data = (X_val,y_val))
@@ -252,14 +256,15 @@ def evaluate_model(model,history, classes, X_train, X_test, y_train, y_test):
     # get prediction as integers [0,1]
     y_test_predict  = np.array(model.predict(X_test)).astype(int)
 
+
     # git index of predicted values in each test sample
-    y_test_predict = np.argmax(y_test_predict,axis=1)
+    # y_test_predict = np.argmax(y_test_predict,axis=1)
 
 
 
     # git index of true values in each test sample
-    y_test = np.array(y_test)
-    y_test = np.argmax(y_test,axis =1)
+    # y_test = np.array(y_test)
+    # y_test = np.argmax(y_test,axis =1)
 
     # Time cost
     average_time = (time.time() - t0) / (len(y_train) + len(y_test))
@@ -311,8 +316,8 @@ if __name__ == "__main__":
     model_config= config['model']
     saved_weights_path=config['saved_weights_path']
     metric = 'accuracy'
-
-    history = pickle.load(open('models/history.history','rb'))
+    if os.path.exists('models/history.history'):
+      history = pickle.load(open('models/history.history','rb'))
     model = None
     
     # get training data from dataset folder

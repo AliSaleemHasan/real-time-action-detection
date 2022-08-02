@@ -27,10 +27,7 @@ def plot_confusion_matrix(ax ,y_true, y_pred, classes,
     Normalization can be applied by setting `normalize=True`.
     """
     if not title:
-        if normalize:
-            title = 'Normalized confusion matrix'
-        else:
-            title = 'Confusion matrix, without normalization'
+            title = 'confusion matrix'
 
     # Compute confusion matrix
     cm = confusion_matrix(y_true, y_pred)

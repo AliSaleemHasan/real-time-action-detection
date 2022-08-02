@@ -2,6 +2,7 @@
 
 *__pycache__
 /DATA_SET/*
+/TEST_SET
 /logs/train
 /test
 /Logs

@@ -1,5 +1,6 @@
 #General SETTINGS
 data_directory: DATA_SET #DataSet Directory
+test_set_path: TEST_SET
 classes: [cheating, not_cheating] #Classes names in Dataset
 no_classes: 2 #Number of classes in dataset
 test_size: 0.2 #Size of testset

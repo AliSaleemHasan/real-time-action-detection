@@ -13,7 +13,7 @@ def plt_statistic(history,ax,metric,title_below = False):
 
     ax.set_ylabel(metric)
     ax.set_xlabel('epoch')
-    ax.legend(['train', 'test'], loc='upper right')
+    ax.legend(['train', 'validation'], loc='upper right')
 
 
 # helper function to plot confusion matrix 

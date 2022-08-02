@@ -85,7 +85,7 @@ def LSTM_model(modelConfig):
 
     return model
 
-def getDataSet(classes,datasetPath,sequence_length,test_size):
+def getDataSet(classes,datasetPath,sequence_length,test_size,test=False):
     '''
     This function is used to get dataset labels and sequences and split it to 
     input X and output(labels) Y
@@ -98,7 +98,6 @@ def getDataSet(classes,datasetPath,sequence_length,test_size):
         
         Returns : X_train, X_test, y_train, y_test
     '''
-    start_time = time.perf_counter()
 
     # intialize list to save all sequences for one video in dataset
     sequences = []
@@ -139,17 +138,16 @@ def getDataSet(classes,datasetPath,sequence_length,test_size):
 
     # y is labels 
     y = np.array(labels).astype(np.float32)
+   
 
+    if not test:
+        # split DataSet to train test 
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size,random_state=15)
 
-    # split DataSet to train test 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size,random_state=15)
-
-
-    end_time = time.perf_counter()
-    logging.info(f'It took {end_time- start_time :0.2f} second(s) to complete.')
-
-
-    return X_train,X_test,y_train,y_test
+        return X_train,X_test,y_train,y_test
+    else:
+         return X,y
+   
 
 
 
@@ -223,13 +221,12 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,met
 
 
 
-
     
 
 
 
 
-def evaluate_model(model,history, classes, X_train, X_test, y_train, y_test):
+def evaluate_model(model,history, classes, X_train, X_val,X_test, y_train, y_val,y_test):
     '''
     This function is to  Evaluate accuracy and time cost 
         Args : 
@@ -242,8 +239,6 @@ def evaluate_model(model,history, classes, X_train, X_test, y_train, y_test):
 
     fig = plt.figure()
 
-    
-
 
     t0 = time.time()
     
@@ -251,23 +246,25 @@ def evaluate_model(model,history, classes, X_train, X_test, y_train, y_test):
     model.evaluate(X_train, y_train)
 
     # accuracy on test set
-    model.evaluate(X_test, y_test)
+    model.evaluate(X_val, y_val)
 
     # get prediction as integers [0,1]
+    y_val_predict  = np.array(model.predict(X_val)).astype(int)
+
     y_test_predict  = np.array(model.predict(X_test)).astype(int)
 
 
     # git index of predicted values in each test sample
-    # y_test_predict = np.argmax(y_test_predict,axis=1)
+    # y_val_predict = np.argmax(y_val_predict,axis=1)
 
 
 
     # git index of true values in each test sample
-    # y_test = np.array(y_test)
-    # y_test = np.argmax(y_test,axis =1)
+    # y_val = np.array(y_val)
+    # y_val = np.argmax(y_val,axis =1)
 
     # Time cost
-    average_time = (time.time() - t0) / (len(y_train) + len(y_test))
+    average_time = (time.time() - t0) / (len(y_train) + len(y_val))
     logging.info("Time cost for predicting on train and test data is: "
         "{:.5f} seconds".format(average_time))
 
@@ -275,17 +272,22 @@ def evaluate_model(model,history, classes, X_train, X_test, y_train, y_test):
     gs = fig.add_gridspec(2,2)
     ax1 = fig.add_subplot(gs[0, 0])
     ax2 = fig.add_subplot(gs[0, 1])
-    ax3 = fig.add_subplot(gs[1, :])
+    ax3 = fig.add_subplot(gs[1, 0])
+    ax4 = fig.add_subplot(gs[1, 1])
+
+
 
         # Plot confucion_matrix (TP,TN,FP,FN)
     plot_confusion_matrix(ax2,
-        y_test, y_test_predict, classes, normalize=False)
+        y_val, y_val_predict, classes, normalize=False,title="validation set confusion matrix")
+        # Plot confucion_matrix (TP,TN,FP,FN)
+    plot_confusion_matrix(ax1,
+        y_test, y_test_predict, classes, normalize=False,title="test set confusion matrix")
     
-   
+    
 
     
-    
-    plt_statistic(history,ax1,'loss')
+    plt_statistic(history,ax4,'loss',True)
 
  
 
@@ -315,6 +317,7 @@ if __name__ == "__main__":
     loss = config['loss']
     model_config= config['model']
     saved_weights_path=config['saved_weights_path']
+    test_path = config['test_set_path']
     metric = 'accuracy'
     if os.path.exists('models/history.history'):
       history = pickle.load(open('models/history.history','rb'))
@@ -322,6 +325,9 @@ if __name__ == "__main__":
     
     # get training data from dataset folder
     X_train,X_val,y_train,y_val = getDataSet(classes,dataset_path,sequence_length,test_size)
+    if test_path != "":
+      X_test,y_test = getDataSet(classes,test_path,sequence_length,test_size,True)
+    
 
     lstm = LSTM_model(model_config)
 
@@ -330,7 +336,7 @@ if __name__ == "__main__":
     model =Train(lstm,saved_weights_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,metric)
 
         # evaluate model on test data
-    evaluate_model(model,history,classes,X_train,X_val,y_train,y_val)
+    evaluate_model(model,history,classes,X_train,X_val,X_test,y_train,y_val,y_test)
 
     
 

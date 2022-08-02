@@ -26,7 +26,7 @@ class FeatureGenerator :
         image = frame.copy()
 
         # resize the image (width and hight must be multibles of 32)
-        image = tf.image.resize_with_pad(tf.expand_dims(image, axis=0), 256,256)
+        image = tf.image.resize_with_pad(tf.expand_dims(image, axis=0), 480,480)
         input_img = tf.cast(image, dtype=tf.int32)
         
         # features  is [6,17,57] array of 6 people max , 17 keypoint for each person 

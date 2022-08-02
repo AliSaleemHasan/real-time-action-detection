@@ -19,7 +19,7 @@ class Tracker(object):
             as new people appeared in the video.
     '''
 
-    def __init__(self, dist_thresh=0.1,score_thresh=0.5,num_of_keypoints=5, max_humans=6):
+    def __init__(self, dist_thresh=0.2,score_thresh=0.5,num_of_keypoints=4, max_humans=6):
         '''
         Arguments:
             dist_thresh {float}: 0.0~1.0. The distance between the joints
@@ -225,7 +225,7 @@ class Tracker(object):
 
 
         # take with score more than 0.05
-        valid_idx = np.logical_and(sk1[:,2] >= self.score_thresh, sk2[:,2] >= self.score_thresh)
+        valid_idx = np.logical_and(sk1[:,2] >= 0.2, sk2[:,2] >= 0.2)
 
 
 
@@ -246,6 +246,7 @@ class Tracker(object):
                     sum_dist += calc_dist(sk1[idx:idx+2,j], sk2[idx:idx+2,j])
             mean_dist = sum_dist / (num_points *2)
             mean_dist /= (1.0 + 0.05*num_points)  # more points, the better
+            # print(mean_dist)
             return mean_dist
 
       

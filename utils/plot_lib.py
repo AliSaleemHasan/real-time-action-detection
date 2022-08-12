@@ -1,10 +1,11 @@
+from turtle import color
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 import numpy as np
 
 
 def plt_statistic(history,ax,metric,title_below = False):
-    ax.plot(history[metric])
+    ax.plot(history[metric],color="m")
     ax.plot(history['val_{}'.format(metric)])
     if title_below == True:
       ax.set_title('model {}'.format(metric),y = -0.01)

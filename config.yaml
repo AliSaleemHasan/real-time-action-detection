@@ -33,3 +33,6 @@ model:
     activation: relu
   - layer: Dropout
     drop_perc: 0.3
+  - layer: Dense
+    units: 1
+    activation: sigmoid

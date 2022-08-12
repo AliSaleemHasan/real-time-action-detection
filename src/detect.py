@@ -28,7 +28,6 @@ if True:  # Include project path
     from utils.FeatureGenerator import FeatureGenerator
     from utils.tracker import Tracker
 
-
 # get configuration file 
 with open('config.yaml') as f:
     config = yaml.load(f, Loader=SafeLoader)
@@ -74,7 +73,7 @@ def single_person_detection(sequence,frame,action_model,sequence_length,actionMa
 
     
         # save predection output with person id to text 
-        text += " " + str(id + 1)
+        # text += " " + str(id + 1)
 
 
     if output_location[4] > 0 and text[:8]=='cheating'  :
@@ -214,6 +213,8 @@ def detect(pose_model,action_model,video_path,actions,sequence_length,frame_dist
 
         # get frame by frame from image feed
         success,frame = cap.read()
+        
+
 
 
         # add frame number
@@ -232,6 +233,7 @@ def detect(pose_model,action_model,video_path,actions,sequence_length,frame_dist
 
 
         people = [False] * 6
+
         for key,value in dict.items():
 
 

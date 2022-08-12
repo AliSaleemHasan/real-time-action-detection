@@ -79,8 +79,6 @@ def LSTM_model(modelConfig):
             model.add(Dropout(item['drop_perc']))
         
 
-    # add last layer 
-    model.add(Dense(1,activation="sigmoid"))
         
 
     return model
@@ -204,7 +202,7 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,met
     model.compile(optimizer, loss, metrics=metrics)
 
     # start training
-    history =model.fit(X_train, y_train, epochs= epochs,batch_size=64 ,callbacks=[tb_callback,callback]   ,validation_data = (X_val,y_val))
+    history =model.fit(X_train, y_train, epochs= epochs,batch_size=16 ,callbacks=[tb_callback,callback]   ,validation_data = (X_val,y_val))
 
     # save model weights after training
     model.save("models/weights.h5")
@@ -279,10 +277,10 @@ def evaluate_model(model,history, classes, X_train, X_val,X_test, y_train, y_val
 
         # Plot confucion_matrix (TP,TN,FP,FN)
     plot_confusion_matrix(ax2,
-        y_val, y_val_predict, classes, normalize=False,title="validation set confusion matrix")
+        y_val, y_val_predict, classes, cmap =plt.cm.Purples ,normalize=False,title="validation set confusion matrix")
         # Plot confucion_matrix (TP,TN,FP,FN)
     plot_confusion_matrix(ax1,
-        y_test, y_test_predict, classes, normalize=False,title="test set confusion matrix")
+        y_test, y_test_predict, classes,normalize=False,title="test set confusion matrix")
     
     
 

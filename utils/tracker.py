@@ -19,7 +19,7 @@ class Tracker(object):
             as new people appeared in the video.
     '''
 
-    def __init__(self, dist_thresh=0.2,score_thresh=0.5,num_of_keypoints=4, max_humans=6):
+    def __init__(self, dist_thresh=0.07,score_thresh=0.5,num_of_keypoints=4, max_humans=6):
         '''
         Arguments:
             dist_thresh {float}: 0.0~1.0. The distance between the joints

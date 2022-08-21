@@ -150,7 +150,7 @@ def getDataSet(classes,datasetPath,sequence_length,test_size,test=False):
 
 
 
-
+# tensorflow callback to cancel training if validation_loss <=0.02
 class myCallback(tf.keras.callbacks.Callback):
   def on_epoch_end(self, epoch, logs={}):
     if(logs.get('val_loss')<=0.02):
@@ -190,7 +190,7 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,met
         # load weights into model
         model.load_weights(model_path)
 
-
+        #compile model
         model.compile(optimizer, loss, metrics=metrics)
 
         return model
@@ -207,7 +207,7 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,met
     # save model weights after training
     model.save("models/weights.h5")
 
-
+    # save model history after saving it
     with open('models/history.history', 'wb') as file_pi:
         pickle.dump(history.history, file_pi)
     
@@ -273,8 +273,6 @@ def evaluate_model(model,history, classes, X_train, X_val,X_test, y_train, y_val
     ax3 = fig.add_subplot(gs[1, 0])
     ax4 = fig.add_subplot(gs[1, 1])
 
-
-
         # Plot confucion_matrix (TP,TN,FP,FN)
     plot_confusion_matrix(ax2,
         y_val, y_val_predict, classes, cmap =plt.cm.Purples ,normalize=False,title="validation set confusion matrix")
@@ -282,13 +280,10 @@ def evaluate_model(model,history, classes, X_train, X_val,X_test, y_train, y_val
     plot_confusion_matrix(ax1,
         y_test, y_test_predict, classes,normalize=False,title="test set confusion matrix")
     
-    
-
-    
+    # plot accuracy
     plt_statistic(history,ax4,'loss',True)
 
- 
-
+    # plot loss
     plt_statistic(history,ax3,'accuracy',True)
 
   
@@ -297,15 +292,8 @@ def evaluate_model(model,history, classes, X_train, X_val,X_test, y_train, y_val
 
 
 
-
-if __name__ == "__main__":
-
-    
-    with open('config.yaml') as f:
-         config = yaml.load(f, Loader=SafeLoader)
-    
-
-    # get all needed configuration for training
+def main(config):
+     # get all needed configuration for training
     classes = config['classes']
     dataset_path = config['data_directory']
     test_size = config['test_size']
@@ -338,6 +326,16 @@ if __name__ == "__main__":
 
     
 
+
+
+if __name__ == "__main__":
+
+    
+    with open('config.yaml') as f:
+         config = yaml.load(f, Loader=SafeLoader)
+
+    main(config=config)
+   
 
 
 

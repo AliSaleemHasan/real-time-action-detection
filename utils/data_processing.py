@@ -4,7 +4,6 @@
     1- createDataSet(model,to,classes,sequence_length,no_sequences,frame_delay,vids_folder)
    
     2- extractFeatures(frame,model):
-
  
     3- deleteNonUsedVids(model,path,sequence_length,keypoint_score,min_keypoints ):
 
@@ -41,7 +40,6 @@ def deleteNonUsedVids(model,path,sequence_length,featureGenerator,keypoint_score
     for vid in os.listdir(os.path.join(path)):
         cap = cv2.VideoCapture(os.path.join(path,vid))
         test_c +=1
-        print(test_c)
 
         # Get the total number of frames in the video.
         video_frames_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))

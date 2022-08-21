@@ -1,5 +1,5 @@
 '''
-This file is applying our Action detection on videos (from webcam or saved videos)
+This file is for applying  Action detection on videos (from webcam or saved videos)
 
     Functions: 
         single_person_detection(skeleton,frame,action_model,sequence_length,actionMap,output_location)
@@ -33,7 +33,7 @@ with open('config.yaml') as f:
     config = yaml.load(f, Loader=SafeLoader)
 
 parser = argparse.ArgumentParser(description="detect on video or webcam feed")
-parser.add_argument("--input",default = None,help="input of detection \n None for webcam , videoPath for video or rtsp link")
+parser.add_argument("--input",default = None,help="input of detection \n None for webcam \n videoPath for video \n rtsp link")
 args = parser.parse_args()
 
 
@@ -43,12 +43,14 @@ def single_person_detection(sequence,frame,action_model,sequence_length,actionMa
     This function is to perform Action detection for just one person 
 
         Args:
-            sequnce: sequence of skeleton of person to perform Action detection on it 
-            frame: image to detect and results on 
+            sequnce: sequence of person movement as skeletons
+            frame: image to detect and output results on
             action_model: used LSTM model for action detection
-            sequence_lenght: length of skeletons that needed to input them to action_model
             actionMap: dict of action and corresponding label
+            sequence_lenght: length of skeletons that needed to input them to action_model
             output_location: output location on frame 
+            prev_text: previous detection (it will be used to show same output until the nth frame comes) 
+            seq_has_changed: to know if tracker detect a new sequence or the input sequence is different than the one before
 
         Return :
             skel_seq : list of this person human in multiple frames
@@ -272,10 +274,8 @@ def detect(pose_model,action_model,video_path,actions,sequence_length,frame_dist
 
    
 
-
+# get all needed configuration for detection from config file 
 def main(config):
-
-    # get all needed configuration for training
     classes = config['classes']
     model_directory = config['model_directory']
     sequence_length= config['sequence_length']
@@ -286,22 +286,12 @@ def main(config):
         with open("DATA_SET/sequence_rate.txt",'r') as f:
             lines =f.readlines()
             frame_distance=max(int(lines[0])-1 ,1)
-    
-    
-    
-
-
     input = args.input
-
-
     pose_model = hub.load(model_directory)
     net = pose_model.signatures['serving_default']
     action_model = LSTM_model(modelConfig)
     action_model.load_weights(saved_weights_path)
-
     detect(net,action_model,input,classes,sequence_length,frame_distance)
-
-
 
 
             

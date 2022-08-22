@@ -170,7 +170,7 @@ def createDataSet(model,to,classes,featureGenerator,tracker,augmentation=1,seque
         cap = cv2.VideoCapture(0)
         
 
-        # loap throw classes to make videos for each action 
+        # loop throw classes to make videos for each action 
         for action in classes :
 
            # iterate for no_sequence to make no_sequence video for each action
@@ -233,13 +233,13 @@ def createDataSet(model,to,classes,featureGenerator,tracker,augmentation=1,seque
     else:
         
         sequence_rate = 0
-        # loap throw all classes in dataset (cheating, notcheating ) in our case 
+        # loop throw all classes in dataset (cheating, notcheating ) in our case 
         for action in classes:
             frame_rate = 0 
             counter =0
             i = - (augmentation + 1)
 
-            # loap throw all videos in vids_folder
+            # loop throw all videos in vids_folder
             for vid_num,video in  enumerate(os.listdir(os.path.join(vids_folder,action))):
                 
                 # get required frame list 
@@ -295,7 +295,7 @@ def createDatasetFolders(to,_from,classes,augmentation=0,no_sequences=30):
 
 
 
-    # loap throw classes 
+    # loop throw classes 
     for action in classes :
 
         # create new folder for each action if not exist

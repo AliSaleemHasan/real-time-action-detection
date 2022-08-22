@@ -114,7 +114,7 @@ def draw_connections(frame, keypoints, edges, threshold):
     # take keypoints score with respect of frame size
     shaped = np.squeeze(np.multiply(keypoints, [y,x,1]))
     
-    # loap throw edges
+    # loop throw edges
     for edge,color in edges.items():
         
         # take edge coordinate 

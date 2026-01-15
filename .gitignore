@@ -8,3 +8,5 @@
 /Logs
 /vids
 models/*
+models/*.h5
+*.gz

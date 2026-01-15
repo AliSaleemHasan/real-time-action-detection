@@ -1,14 +1,14 @@
 #General SETTINGS
 data_directory: DATA_SET #DataSet Directory
-test_set_path: TEST_SET
-classes: [cheating, not_cheating] #Classes names in Dataset
+test_set_path: ""
+classes: [jacks, kiks] #Classes names in Dataset
 no_classes: 2 #Number of classes in dataset
 test_size: 0.2 #Size of testset
 theshold: 0.4 #Threshold for kepoints and boundingBoxes
 model_directory: models/movenet_multipose_lightning_1 #Pose estimation model directory
-sequence_length: 30 # number of frames in each video
-no_sequences: 30 # number of videos in each class
-epochs: 500 #number of epochs to train on
+sequence_length: 40 # number of frames in each video
+no_sequences: 40 # number of videos in each class
+epochs: 200 #number of epochs to train on
 optimizer: adam #Adam , RMSprops .. etc
 loss: binary_crossentropy #binary_crossentropy, categorical_crossentropy...
 log_path: "logs" # where to save logs after training

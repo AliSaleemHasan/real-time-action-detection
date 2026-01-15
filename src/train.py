@@ -14,14 +14,14 @@ import pickle
 import logging
 import tensorflow as tf
 import numpy as np
-from tensorflow.python.keras.callbacks import TensorBoard
+from tensorflow.keras.callbacks import TensorBoard
 import matplotlib.pyplot as plt
 from yaml.loader import SafeLoader
-from keras.utils.np_utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
-from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import LSTM, Dense,Dropout
-from tensorflow.python.keras.metrics import Precision
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense,Dropout
+from tensorflow.keras.metrics import Precision
 
 
 if True:  # Include project path
@@ -321,8 +321,9 @@ def main(config):
     # train model on our data
     model =Train(lstm,saved_weights_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,metric)
 
+    if test_path != "":
         # evaluate model on test data
-    evaluate_model(model,history,classes,X_train,X_val,X_test,y_train,y_val,y_test)
+      evaluate_model(model,history,classes,X_train,X_val,X_test,y_train,y_val,y_test)
 
     
 

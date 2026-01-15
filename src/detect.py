@@ -78,9 +78,9 @@ def single_person_detection(sequence,frame,action_model,sequence_length,actionMa
         # text += " " + str(id + 1)
 
 
-    if output_location[4] > 0 and text[:8]=='cheating'  :
-        cv2.putText(frame, text, (int(output_location[1] * x),int((output_location[0] * y ))), 
-            cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
+    # if output_location[4] > 0 and text[:8]=='cheating'  :
+    cv2.putText(frame, text, (int(output_location[1] * x),int((output_location[0] * y ))), 
+        cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2, cv2.LINE_AA)
     # put output on frame
     
     return text

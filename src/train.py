@@ -20,7 +20,7 @@ from yaml.loader import SafeLoader
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense,Dropout
+from tensorflow.keras.layers import Input,LSTM, Dense,Dropout
 from tensorflow.keras.metrics import Precision
 
 
@@ -63,9 +63,9 @@ def LSTM_model(modelConfig):
 
             # for first LSTM layer we need to add input shape  
             if index == 0:
-
+                model.add(Input(shape=(30,51)))
                 # add lstm layer to the model with input shape
-                model.add(LSTM(item['units'],return_sequences = item['return_sequence'],activation=item['activation'],input_shape=(30,51)))
+                model.add(LSTM(item['units'],return_sequences = item['return_sequence'],activation=item['activation']))
 
             else:
 

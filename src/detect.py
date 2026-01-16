@@ -27,6 +27,13 @@ if True:  # Include project path
     from utils.draw_output import draw_features ,EDGES,draw_boundingBoxes
     from utils.FeatureGenerator import FeatureGenerator
     from utils.tracker import Tracker
+    try:
+        from utils.gpu_helper import configure_gpu
+        configure_gpu()
+    except ImportError:
+        print("Warning: Could not import gpu_helper. Running without explicit GPU configuration.")
+
+
 
 # get configuration file 
 with open('config.yaml') as f:

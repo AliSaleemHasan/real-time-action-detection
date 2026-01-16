@@ -48,7 +48,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO,
 					format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
-def LSTM_model(modelConfig):
+def LSTM_model(modelConfig, sequence_length=30):
     '''
     This function is for creating our LSTM model 
 
@@ -70,7 +70,7 @@ def LSTM_model(modelConfig):
 
             # for first LSTM layer we need to add input shape  
             if index == 0:
-                model.add(Input(shape=(30,51)))
+                model.add(Input(shape=(sequence_length,51)))
                 # add lstm layer to the model with input shape
                 model.add(LSTM(item['units'],return_sequences = item['return_sequence'],activation=item['activation']))
 
@@ -322,7 +322,7 @@ def main(config):
       X_test,y_test = getDataSet(classes,test_path,sequence_length,test_size,True)
     
 
-    lstm = LSTM_model(model_config)
+    lstm = LSTM_model(model_config, sequence_length)
 
     print(lstm.summary())
     # train model on our data

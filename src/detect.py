@@ -296,7 +296,7 @@ def main(config):
     input = args.input
     pose_model = hub.load(model_directory)
     net = pose_model.signatures['serving_default']
-    action_model = LSTM_model(modelConfig)
+    action_model = LSTM_model(modelConfig, sequence_length)
     action_model.load_weights(saved_weights_path)
     detect(net,action_model,input,classes,sequence_length,frame_distance)
 

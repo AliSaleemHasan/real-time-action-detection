@@ -18,14 +18,15 @@ from yaml.loader import SafeLoader
 from train import LSTM_model
 
 
-if True:  # Include project path
     import sys
     import os
     ROOT = os.path.dirname(os.path.abspath(__file__))+"/../"
     CURR_PATH = os.path.dirname(os.path.abspath(__file__))+"/"
     sys.path.append(ROOT)
     from utils.draw_output import draw_features ,EDGES,draw_boundingBoxes
-    from utils.FeatureGenerator import FeatureGenerator
+    # from utils.FeatureGenerator import FeatureGenerator # REMOVED
+    from src.pose_estimation.FeatureGenerator import FeatureGenerator
+    from src.pose_estimation.yolo import YOLOPoseEstimator
     from utils.tracker import Tracker
     try:
         from utils.gpu_helper import configure_gpu
@@ -305,14 +306,18 @@ def main(config):
             lines =f.readlines()
             frame_distance=max(int(lines[0])-1 ,1)
     input = args.input
-    pose_model = hub.load(model_directory)
-    net = pose_model.signatures['serving_default']
+    # pose_model = hub.load(model_directory)
+    # net = pose_model.signatures['serving_default']
+    
+    # Use YOLOv11 Pose Estimator
+    pose_estimator = YOLOPoseEstimator(model_path='yolo11n-pose.pt')
+
     action_model = LSTM_model(modelConfig, sequence_length)
     action_model.load_weights(saved_weights_path)
     # Check if we should use multi-class detection based on the last layer's activation
     is_multiclass = modelConfig[-1]['activation'] == 'softmax'
     threshold = config.get('theshold', 0.4) # Using 'theshold' as in config.yaml
-    detect(net,action_model,input,classes,sequence_length,frame_distance, is_multiclass, threshold)
+    detect(pose_estimator,action_model,input,classes,sequence_length,frame_distance, is_multiclass, threshold)
 
 
             

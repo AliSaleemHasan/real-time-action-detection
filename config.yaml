@@ -1,16 +1,16 @@
 #General SETTINGS
 data_directory: DATA_SET #DataSet Directory
 test_set_path: ""
-classes: [jacks, kiks] #Classes names in Dataset
-no_classes: 2 #Number of classes in dataset
+classes: [JumpingJack, Lunges,PullUps,PushUps,WallPushups] #Classes names in Dataset
+no_classes: 5 #Number of classes in dataset
 test_size: 0.2 #Size of testset
 theshold: 0.4 #Threshold for kepoints and boundingBoxes
 model_directory: models/movenet_multipose_lightning_1 #Pose estimation model directory
-sequence_length: 40 # number of frames in each video
-no_sequences: 40 # number of videos in each class
-epochs: 200 #number of epochs to train on
+sequence_length: 30 # number of frames in each video
+no_sequences: 30 # number of videos in each class
+epochs: 500 #number of epochs to train on
 optimizer: adam #Adam , RMSprops .. etc
-loss: binary_crossentropy #binary_crossentropy, categorical_crossentropy...
+loss: categorical_crossentropy #binary_crossentropy, categorical_crossentropy...
 log_path: "logs" # where to save logs after training
 saved_weights_path: "models/weights.h5"
 frame_distance: 4 #distance between frames that we want to take
@@ -23,16 +23,21 @@ model:
     activation: relu
     input_shape: (30,51)
   - layer: LSTM
-    units: 8
+    units: 16
     return_sequence: False
     activation: relu
   - layer: Dropout
     drop_perc: 0.3
   - layer: Dense
-    units: 8
+    units: 32
     activation: relu
   - layer: Dropout
     drop_perc: 0.3
   - layer: Dense
-    units: 1
-    activation: sigmoid
+    units: 16
+    activation: relu
+  - layer: Dropout
+    drop_perc: 0.3
+  - layer: Dense
+    units:  5
+    activation: softmax

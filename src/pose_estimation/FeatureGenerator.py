@@ -5,50 +5,37 @@
 '''
 
 
-import tensorflow as tf
 import numpy as np
+from .interfaces import PoseEstimator
 
 class FeatureGenerator :
 
-    def __init__(self,keypoints_thresh=0.4) :
+    def __init__(self, keypoints_thresh=0.4) :
         self.keypoints = []
         self.boundingBoxes = []
         self.features = {}
         self.keypoints_thresh = keypoints_thresh
 
 
-    def extractFeatures(self,frame,model):
+    def extractFeatures(self, frame, pose_estimator: PoseEstimator):
         '''
         This function Extracts Features from image using model 
         Args : 
             frame : image to extract features from 
-            model : used model to extract features from 
+            pose_estimator : used model to extract features from (PoseEstimator instance)
         Return : 
             keypoints : 17 different key point with (x,y,score) for each one
             bounding_boxes: (ymax,xmax,ymin,xmin,score) 
         '''
 
-        # get copy of frame
-        image = frame.copy()
-
-        # resize the image (width and hight must be multibles of 32)
-        image = tf.image.resize_with_pad(tf.expand_dims(image, axis=0),160 ,256)
-        input_img = tf.cast(image, dtype=tf.int32)
-        
         # features  is [6,17,57] array of 6 people max , 17 keypoint for each person 
         # each kepoint has (x,y,score) and the rest 5 values are for bounding box   
-        features = model(input_img)
-
-        # get keypoints from features
-        keypoints = features['output_0'].numpy()[:,:,:51].reshape(6,17,3)
-
-        # get boundingBoxes from features
-        bounding_boxes = features['output_0'].numpy()[:,:,51:56].reshape((6,5))
+        keypoints, bounding_boxes = pose_estimator.estimate(frame)
 
         self.keypoints = keypoints
         self.boundingBoxes = bounding_boxes
-        return keypoints,bounding_boxes
-
+        
+        return keypoints, bounding_boxes
 
 
     
@@ -100,26 +87,3 @@ class FeatureGenerator :
         # return augmented skels as np array
         augmented_skels = np.asarray(augmented_skels)
         return augmented_skels
-        
-        
-        
-
-
-
-
-
-
-
-
-    
-        
-
-        
-
-
-        
-            
-
-
-
-

@@ -10,23 +10,26 @@ from yaml import SafeLoader
 
 
 
-if True:  # Include project path
+if True:  
     import sys
     import os
     ROOT = os.path.dirname(os.path.abspath(__file__))+"/../"
     CURR_PATH = os.path.dirname(os.path.abspath(__file__))+"/"
     sys.path.append(ROOT)
     from utils.data_processing import createDataSet,createDatasetFolders,deleteNonUsedVids
-    from utils.FeatureGenerator import FeatureGenerator
+    from src.pose_estimation.FeatureGenerator import FeatureGenerator 
+    from src.pose_estimation.yolo import YOLOPoseEstimator 
     from utils.tracker import Tracker
+    try:
+        from utils.gpu_helper import configure_gpu
+        configure_gpu()
+    except ImportError:
+        print("Warning: Could not import gpu_helper. Running without explicit GPU configuration.")
 
 
 
 
-
-
-
-# get configuration file 
+# get configuration file
 with open('config.yaml') as f:
     config = yaml.load(f, Loader=SafeLoader)
 
@@ -53,17 +56,19 @@ def main(config):
     del_nonUsed = args.del_nonUsed
     input = args.input
     to = args.to
-    poseModel = hub.load(model_directory)
-    net = poseModel.signatures['serving_default']
+    
+    # Switching to YOLO as default
+    pose_estimator = YOLOPoseEstimator(model_path='yolo11n-pose.pt') 
+    
     fg = FeatureGenerator()
     tracker = Tracker()
-        
+
     if del_nonUsed =="True":
-        deleteNonUsedVids(net,input,sequence_length=sequence_length,featureGenerator=fg)
+        deleteNonUsedVids(pose_estimator,input,sequence_length=sequence_length,featureGenerator=fg)
     else:
         createDatasetFolders(to=to,_from=input,classes=classes,augmentation=0,no_sequences=no_sequences)
-       
-        createDataSet(model =net,to =to,classes = classes,featureGenerator=fg,tracker = tracker,augmentation=0,sequence_length = sequence_length,no_sequences = no_sequences ,vids_folder=input)
+
+        createDataSet(model =pose_estimator,to =to,classes = classes,featureGenerator=fg,tracker = tracker,augmentation=0,sequence_length = sequence_length,no_sequences = no_sequences ,vids_folder=input)
 
 
 if __name__ == '__main__':

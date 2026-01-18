@@ -90,7 +90,7 @@ def LSTM_model(modelConfig, sequence_length=30):
 
     return model
 
-def getDataSet(classes,datasetPath,sequence_length,test_size,test=False):
+def getDataSet(classes,datasetPath,sequence_length,test_size,is_multiclass=False,test=False):
     '''
     This function is used to get dataset labels and sequences and split it to 
     input X and output(labels) Y
@@ -100,6 +100,7 @@ def getDataSet(classes,datasetPath,sequence_length,test_size,test=False):
             datasetPath: path for our saved dataset
             sequence_length: number of frame in each video
             test_size: size for testSet
+            is_multiclass: if True, applies one-hot encoding
         
         Returns : X_train, X_test, y_train, y_test
     '''
@@ -116,33 +117,74 @@ def getDataSet(classes,datasetPath,sequence_length,test_size,test=False):
     # loop throw action to return sequences and labels for all classes in dataset 
     for action in classes:
 
-        # get all video for action by looping over all videos folders for this action 
-        for videoFolder in np.array(os.listdir(os.path.join(datasetPath,action))).astype(int):
+        # Capture all folders in the action path
+        folder_path = os.path.join(datasetPath,action)
+        if not os.path.exists(folder_path):
+             print(f"--- [Training Data] Warning: Action folder {action} not found. Skipping. ---")
+             continue
+             
+        all_items = os.listdir(folder_path)
+        # Filter: Only keep folders that are numeric (e.g. "0", "1", "2")
+        video_folders = [f for f in all_items if f.isdigit()]
+        
+        if not video_folders:
+            print(f"--- [Training Data] Warning: No numeric feature folders found in {action}. Skipping. ---")
+            continue
+
+        # get all video for action by looping over all folders for this action 
+        for videoFolder in np.array(video_folders).astype(int):
+            
+            video_path = os.path.join(datasetPath, action, str(videoFolder))
+            
+            # Robustness: Check if folder contains enough files
+            if len(os.listdir(video_path)) < sequence_length:
+                print(f"--- [Training Data] Warning: Video {videoFolder} in {action} has fewer frames than sequence length ({sequence_length}). Skipping. ---")
+                continue
 
             # make window list to save all frame files for one video  
             window = []
+            is_video_valid = True
 
             # loop  number of frames times
             for frame_num in range(sequence_length):
+                npy_file_path = os.path.join(video_path, "{}.npy".format(frame_num))
+                
+                # Robustness: Check file existence and size
+                if not os.path.exists(npy_file_path):
+                    print(f"Warning: Missing frame {frame_num} in {video_path}. Skipping video.")
+                    is_video_valid = False
+                    break
+                
+                if os.path.getsize(npy_file_path) == 0:
+                    print(f"Warning: Empty file {frame_num} in {video_path}. Skipping video.")
+                    is_video_valid = False
+                    break
 
-                # get frame features that stored as np_array
-                res = np.load(os.path.join(datasetPath,action,str(videoFolder),"{}.npy".format(frame_num)))
+                try:
+                    # get frame features that stored as np_array
+                    res = np.load(npy_file_path)
+                    window.append(res)
+                except Exception as e:
+                    print(f"Error loading {npy_file_path}: {e}. Skipping video.")
+                    is_video_valid = False
+                    break
 
+            if is_video_valid:
+                # add all frame features for one video of one action to sequences list
+                sequences.append(window)
 
-                # add frame features to window
-                window.append(res)
-
-            # add all frame features for one video of one action to sequences list
-            sequences.append(window)
-
-            # add label for this video to labels
-            labels.append(labelMap[action])
+                # add label for this video to labels
+                labels.append(labelMap[action])
 
     # create X as np array of sequences
     X = np.array(sequences)
 
     # y is labels 
     y = np.array(labels).astype(np.float32)
+    
+    # Apply One-Hot Encoding if multiclass (Softmax)
+    if is_multiclass:
+        y = to_categorical(y, num_classes=len(classes))
    
 
     if not test:
@@ -317,9 +359,10 @@ def main(config):
     model = None
     
     # get training data from dataset folder
-    X_train,X_val,y_train,y_val = getDataSet(classes,dataset_path,sequence_length,test_size)
+    is_multiclass = model_config[-1]['activation'] == 'softmax'
+    X_train,X_val,y_train,y_val = getDataSet(classes,dataset_path,sequence_length,test_size,is_multiclass=is_multiclass)
     if test_path != "":
-      X_test,y_test = getDataSet(classes,test_path,sequence_length,test_size,True)
+      X_test,y_test = getDataSet(classes,test_path,sequence_length,test_size,is_multiclass=is_multiclass,test=True)
     
 
     lstm = LSTM_model(model_config, sequence_length)

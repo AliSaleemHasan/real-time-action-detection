@@ -81,6 +81,7 @@ def deleteNonUsedVids(model,path,sequence_length,featureGenerator,keypoint_score
             
         # add video into to_delete if number of frames without skels are  equal to sequence length
         if skels_counter  <=  sequence_length -1:
+            print("video {} does not have enough keypoints = {}".format(vid,skels_counter))
             to_delete.append(os.path.join(path,vid))
     print("there is {} of videos to delete".format(len(to_delete)))
     
@@ -232,15 +233,35 @@ def createDataSet(model,to,classes,featureGenerator,tracker,augmentation=1,seque
     # get videos from vids_folder one by one
     else:
         
+        # Calculate total videos first for progress logging
+        total_videos_map = {}
+        total_global_videos = 0
+        for c in classes:
+            path = os.path.join(vids_folder, c)
+            if os.path.exists(path):
+                count = len(os.listdir(path))
+                total_videos_map[c] = count
+                total_global_videos += count
+        
+        global_processed_count = 0 
+        print(f"[Preprocessing] Found {total_global_videos} videos to process across {len(classes)} classes.")
+
         sequence_rate = 0
         # loop throw all classes in dataset (cheating, notcheating ) in our case 
         for action in classes:
+
             frame_rate = 0 
             counter =0
             i = - (augmentation + 1)
 
             # loop throw all videos in vids_folder
-            for vid_num,video in  enumerate(os.listdir(os.path.join(vids_folder,action))):
+            action_vid_list = os.listdir(os.path.join(vids_folder,action))
+            for vid_num,video in  enumerate(action_vid_list):
+                
+                # Progress Logging
+                global_processed_count += 1
+                percent = int((global_processed_count / total_global_videos) * 100) if total_global_videos else 0
+                print(f"[Preprocessing] {action}: Video {vid_num+1}/{len(action_vid_list)} (Total: {percent}%)")
                 
                 # get required frame list 
                 frame_list,skip_frames_window =frames_extraction(os.path.join(vids_folder,action,str(video)))

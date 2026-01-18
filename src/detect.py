@@ -18,14 +18,15 @@ from yaml.loader import SafeLoader
 from train import LSTM_model
 
 
-if True:  # Include project path
     import sys
     import os
     ROOT = os.path.dirname(os.path.abspath(__file__))+"/../"
     CURR_PATH = os.path.dirname(os.path.abspath(__file__))+"/"
     sys.path.append(ROOT)
     from utils.draw_output import draw_features ,EDGES,draw_boundingBoxes
-    from utils.FeatureGenerator import FeatureGenerator
+    # from utils.FeatureGenerator import FeatureGenerator # REMOVED
+    from src.pose_estimation.FeatureGenerator import FeatureGenerator
+    from src.pose_estimation.yolo import YOLOPoseEstimator
     from utils.tracker import Tracker
     try:
         from utils.gpu_helper import configure_gpu
@@ -45,7 +46,7 @@ args = parser.parse_args()
 
 
 
-def single_person_detection(sequence,frame,action_model,sequence_length,actionMap,output_location,id,prev_text,seq_has_changed ):
+def single_person_detection(sequence,frame,action_model,sequence_length,actionMap,output_location,id,prev_text,seq_has_changed, is_multiclass=False, threshold=0.4 ):
     '''
     This function is to perform Action detection for just one person 
 
@@ -76,9 +77,20 @@ def single_person_detection(sequence,frame,action_model,sequence_length,actionMa
         # get results from model
         res = action_model.predict(np.expand_dims(sequence,axis=0))[0]
 
-        # save output action in text variable
-        result = 1 if res[0] >= 0.5 else 0
-        text = actionMap[result]
+        if is_multiclass:
+            # For softmax/multi-class output, get the index of the highest probability
+            result = np.argmax(res)
+            confidence = res[result]
+        else:
+            # For sigmoid/binary output, use threshold
+            result = 1 if res[0] >= 0.5 else 0
+            confidence = res[0] if result == 1 else (1 - res[0])
+            
+        # Only show text if confidence is above the threshold
+        if confidence >= threshold:
+            text = actionMap[result]
+        else:
+            text = "" # Show nothing if below threshold
 
     
         # save predection output with person id to text 
@@ -165,7 +177,7 @@ def get_frameSequence(sequence,distance_sequence,frame_num,old_length,skeleton,f
     
 
 
-def detect(pose_model,action_model,video_path,actions,sequence_length,frame_distance):
+def detect(pose_model,action_model,video_path,actions,sequence_length,frame_distance, is_multiclass=False, threshold=0.4):
     '''
     This function is to perform action detection on video (saved video or webcam feed)
     by using multiPose detection Model + LSTM model for action detection 
@@ -262,7 +274,7 @@ def detect(pose_model,action_model,video_path,actions,sequence_length,frame_dist
             
             
             # detect on sequence
-            output[key] = single_person_detection(frame_sequence[key],frame,action_model,sequence_length,actionMap,box_dict[key],key,output[key],has_changed)
+            output[key] = single_person_detection(frame_sequence[key],frame,action_model,sequence_length,actionMap,box_dict[key],key,output[key],has_changed, is_multiclass, threshold)
 
         # draw features (keypoints, boundingBoxes and output of detection if found)
         draw_features(frame,keypoints,boundingBoxes,EDGES)
@@ -294,11 +306,18 @@ def main(config):
             lines =f.readlines()
             frame_distance=max(int(lines[0])-1 ,1)
     input = args.input
-    pose_model = hub.load(model_directory)
-    net = pose_model.signatures['serving_default']
+    # pose_model = hub.load(model_directory)
+    # net = pose_model.signatures['serving_default']
+    
+    # Use YOLOv11 Pose Estimator
+    pose_estimator = YOLOPoseEstimator(model_path='yolo11n-pose.pt')
+
     action_model = LSTM_model(modelConfig, sequence_length)
     action_model.load_weights(saved_weights_path)
-    detect(net,action_model,input,classes,sequence_length,frame_distance)
+    # Check if we should use multi-class detection based on the last layer's activation
+    is_multiclass = modelConfig[-1]['activation'] == 'softmax'
+    threshold = config.get('theshold', 0.4) # Using 'theshold' as in config.yaml
+    detect(pose_estimator,action_model,input,classes,sequence_length,frame_distance, is_multiclass, threshold)
 
 
             

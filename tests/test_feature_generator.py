@@ -9,12 +9,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Import module to test (will use sys.path hack)
 try:
-    from utils.FeatureGenerator import FeatureGenerator
+    from src.pose_estimation.FeatureGenerator import FeatureGenerator
+    from src.pose_estimation.interfaces import PoseEstimator
 except ImportError:
-    # Handle the case where tensorflow might not be installed in the test env, 
-    # though user says they have it. 
-    # For robust CI, we might want to mock sys.modules['tensorflow'] before import if needed,
-    # but let's assume env is good first.
     pass
 
 class TestFeatureGenerator(unittest.TestCase):
@@ -28,38 +25,28 @@ class TestFeatureGenerator(unittest.TestCase):
         self.assertEqual(self.fg.boundingBoxes, [])
         self.assertEqual(self.fg.keypoints_thresh, 0.4)
 
-    @patch('utils.FeatureGenerator.tf')
-    def test_extract_features(self, mock_tf):
-        """Test extractFeatures method with mocked tensorflow operations."""
+    def test_extract_features(self):
+        """Test extractFeatures method with mocked PoseEstimator."""
         # Setup mocks
         mock_frame = np.zeros((480, 640, 3), dtype=np.uint8)
         
-        # Mock the model output
-        # Output is expected to be a dictionary with 'output_0' key
-        # output_0 shape: [1, 6, 56] (1 image, 6 people, 51 keypoints+5 bbox)
-        mock_model_output = {
-            'output_0': MagicMock()
-        }
+        # Create a mock PoseEstimator
+        mock_estimator = MagicMock(spec=PoseEstimator)
         
-        # Create dummy output data
-        # 6 people, 56 values (17*3 keypoints + 5 bbox)
-        dummy_output = np.zeros((1, 6, 56), dtype=np.float32)
-        mock_model_output['output_0'].numpy.return_value = dummy_output
+        # Expected output data
+        expected_keypoints = np.random.rand(6, 17, 3)
+        expected_bboxes = np.random.rand(6, 5)
         
-        mock_model = MagicMock(return_value=mock_model_output)
-        
-        # Mock tf image resizing and casting to avoid real TF ops
-        mock_tf.expand_dims.return_value = mock_frame
-        mock_tf.image.resize_with_pad.return_value = mock_frame
-        mock_tf.cast.return_value = mock_frame
+        mock_estimator.estimate.return_value = (expected_keypoints, expected_bboxes)
 
         # Run extraction
-        keypoints, bboxes = self.fg.extractFeatures(mock_frame, mock_model)
+        keypoints, bboxes = self.fg.extractFeatures(mock_frame, mock_estimator)
 
         # Assertions
-        self.assertEqual(keypoints.shape, (6, 17, 3))
-        self.assertEqual(bboxes.shape, (6, 5))
-        np.testing.assert_array_equal(self.fg.keypoints, keypoints)
+        mock_estimator.estimate.assert_called_once_with(mock_frame)
+        np.testing.assert_array_equal(keypoints, expected_keypoints)
+        np.testing.assert_array_equal(bboxes, expected_bboxes)
+        np.testing.assert_array_equal(self.fg.keypoints, expected_keypoints)
         np.testing.assert_array_equal(self.fg.boundingBoxes, bboxes)
 
     def test_augment_skels(self):

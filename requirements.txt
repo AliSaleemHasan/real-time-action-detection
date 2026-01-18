@@ -7,3 +7,4 @@ opencv-python
 tensorflow-hub
 keras
 tensorflow[and-cuda]
+ultralytics

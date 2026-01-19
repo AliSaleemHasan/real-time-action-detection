@@ -15,7 +15,7 @@ import argparse
 import numpy as np
 import tensorflow_hub as hub
 from yaml.loader import SafeLoader
-from src.models.factory import ModelFactory
+
 
 
 import sys
@@ -24,7 +24,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))+"/../"
 CURR_PATH = os.path.dirname(os.path.abspath(__file__))+"/"
 sys.path.append(ROOT)
 from utils.draw_output import draw_features ,EDGES,draw_boundingBoxes
-# from utils.FeatureGenerator import FeatureGenerator # REMOVED
+from src.models.factory import ModelFactory
 from src.pose_estimation.FeatureGenerator import FeatureGenerator
 from src.pose_estimation.yolo import YOLOPoseEstimator
 from utils.tracker import Tracker

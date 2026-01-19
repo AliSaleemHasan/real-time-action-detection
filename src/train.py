@@ -48,47 +48,23 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO,
 					format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
-def LSTM_model(modelConfig, sequence_length=30):
-    '''
-    This function is for creating our LSTM model 
+from src.models.factory import ModelFactory
 
-    Args : 
-        modelConfigPath : model configuration  
+def create_model_from_config(config, sequence_length=30):
+    """
+    Creates the model using the factory based on configuration.
+    """
+    # Create a wrapper or modify factory to accept the full config or just sub-part
+    # The factory expects the full config dictionary to check 'architecture'
+    # But relies on 'model' key for the layers.
+    # We'll pass the whole config object that we get in main()
     
-    Returns :  actionModel (our action detection model)
-    '''
- 
+    # We need to construct a config object that matches what ModelFactory expects
+    # In main(), 'config' is passed.
+    pass # This function is a placeholder if we needed one, but better to just use ModelFactory directly in main.
 
-    # define new keras Sequential model
-    model = Sequential()
+# LSTM_model function removed as it is now in src/models/lstm.py
 
-    # loop throw each layer in modelConfig
-    for index,item in enumerate(modelConfig):
-
-        # if layer is LSTM then add LSTM layer to model
-        if item['layer'] == "LSTM":
-
-            # for first LSTM layer we need to add input shape  
-            if index == 0:
-                model.add(Input(shape=(sequence_length,51)))
-                # add lstm layer to the model with input shape
-                model.add(LSTM(item['units'],return_sequences = item['return_sequence'],activation=item['activation']))
-
-            else:
-
-                # add lstm layer to the model without input_shape 
-                model.add(LSTM(item['units'],return_sequences = item['return_sequence'],activation=item['activation']))
-
-        # add dense layers to model from modelConfig
-        elif item['layer'] == 'Dense' :
-            model.add(Dense(item['units'],activation=item['activation']))
-        else:
-            model.add(Dropout(item['drop_perc']))
-        
-
-        
-
-    return model
 
 def getDataSet(classes,datasetPath,sequence_length,test_size,is_multiclass=False,test=False):
     '''
@@ -365,7 +341,16 @@ def main(config):
       X_test,y_test = getDataSet(classes,test_path,sequence_length,test_size,is_multiclass=is_multiclass,test=True)
     
 
-    lstm = LSTM_model(model_config, sequence_length)
+    # Create model using factory
+    model_factory = ModelFactory()
+    # We need to inject the input shape into the first layer config if it's not handled by the Interface
+    # The Interface .create_model took input_shape.
+    # But our Factory.get_model returns a wrapper class, not the Keras model itself yet.
+    # Correction: Factory.get_model returns the Wrapper instance (LSTMModel or CNN1DModel).
+    # We need to call .create_model() on it.
+    
+    action_model_wrapper = ModelFactory.get_model(config)
+    lstm = action_model_wrapper.create_model(input_shape=(sequence_length, 51))
 
     print(lstm.summary())
     # train model on our data

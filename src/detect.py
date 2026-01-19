@@ -15,7 +15,7 @@ import argparse
 import numpy as np
 import tensorflow_hub as hub
 from yaml.loader import SafeLoader
-from train import LSTM_model
+from src.models.factory import ModelFactory
 
 
 import sys
@@ -312,7 +312,9 @@ def main(config):
     # Use YOLOv11 Pose Estimator
     pose_estimator = YOLOPoseEstimator(model_path='yolo11n-pose.pt')
 
-    action_model = LSTM_model(modelConfig, sequence_length)
+    # Create model using factory
+    action_model_wrapper = ModelFactory.get_model(config)
+    action_model = action_model_wrapper.create_model(input_shape=(sequence_length, 51))
     action_model.load_weights(saved_weights_path)
     # Check if we should use multi-class detection based on the last layer's activation
     is_multiclass = modelConfig[-1]['activation'] == 'softmax'

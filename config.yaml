@@ -16,28 +16,24 @@ saved_weights_path: "models/weights.h5"
 frame_distance: 4 #distance between frames that we want to take
 
 #LSTM model configuration
+# Architecture Selection (LSTM or CNN_1D)
+architecture: CNN1D
+
+# Model Configuration
 model:
-  - layer: LSTM
-    units: 16
-    return_sequence: True
+  # CNN 1D Configuration
+  - layer: Conv1D
+    filters: 64
+    kernel_size: 3
     activation: relu
-    input_shape: (30,51)
-  - layer: LSTM
-    units: 16
-    return_sequence: False
-    activation: relu
-  - layer: Dropout
-    drop_perc: 0.3
+  - layer: MaxPooling1D
+    pool_size: 2
+  - layer: Flatten
   - layer: Dense
     units: 32
     activation: relu
   - layer: Dropout
-    drop_perc: 0.3
+    drop_perc: 0.5
   - layer: Dense
-    units: 16
-    activation: relu
-  - layer: Dropout
-    drop_perc: 0.3
-  - layer: Dense
-    units:  5
+    units: 5
     activation: softmax

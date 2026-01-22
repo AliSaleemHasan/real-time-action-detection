@@ -25,20 +25,22 @@ if True:
         configure_gpu()
     except ImportError:
         print("Warning: Could not import gpu_helper. Running without explicit GPU configuration.")
+from src.config_schema import Config
 
 
 
 
 # get configuration file
 with open('config.yaml') as f:
-    config = yaml.load(f, Loader=SafeLoader)
+    config_data = yaml.load(f, Loader=SafeLoader)
+    config = Config(**config_data)
 
 parser = argparse.ArgumentParser(description="create dataset from webcam feed or from saved videos on disk")
 parser.add_argument("--input",default = None,help="where to collect dataset from \n None for webcam , videoFolderPath for videos ")
 
 parser.add_argument("--del_nonUsed",help="if true then all non used vids in disered directory will be deleted")
 
-parser.add_argument("--to",default = config['data_directory'],help="if true then all non used vids in disered directory will be deleted")
+parser.add_argument("--to",default = config.data_directory,help="if true then all non used vids in disered directory will be deleted")
 
 
 args = parser.parse_args()
@@ -48,11 +50,11 @@ args = parser.parse_args()
 
 
 
-def main(config):
-    classes = config['classes']
-    model_directory = config['model_directory']
-    sequence_length= config['sequence_length']
-    no_sequences = config['no_sequences']
+def main(config: Config):
+    classes = config.classes
+    model_directory = config.model_directory
+    sequence_length= config.sequence_length
+    no_sequences = config.no_sequences
     del_nonUsed = args.del_nonUsed
     input = args.input
     to = args.to

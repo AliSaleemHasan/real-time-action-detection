@@ -22,6 +22,7 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Input,LSTM, Dense,Dropout
 from tensorflow.keras.metrics import Precision
+from src.config_schema import Config
 
 
 if True:  # Include project path
@@ -317,18 +318,20 @@ def evaluate_model(model,history, classes, X_train, X_val,X_test, y_train, y_val
 
 
 
-def main(config):
+def main(config: Config):
      # get all needed configuration for training
-    classes = config['classes']
-    dataset_path = config['data_directory']
-    test_size = config['test_size']
-    sequence_length= config['sequence_length']
-    epochs = config['epochs']
-    optimizer = config['optimizer']
-    loss = config['loss']
-    model_config= config['model']
-    saved_weights_path=config['saved_weights_path']
-    test_path = config['test_set_path']
+    classes = config.classes
+    dataset_path = config.data_directory
+    test_size = config.test_size
+    sequence_length= config.sequence_length
+    epochs = config.epochs
+    optimizer = config.optimizer
+    loss = config.loss
+    # config.model is list of objects, we need to convert to list of dicts for legacy compat if needed
+    # or just use it if factory supports it. For now, matching detect.py approach:
+    model_config = [layer.model_dump() for layer in config.model]
+    saved_weights_path=config.saved_weights_path
+    test_path = config.test_set_path
     metric = 'accuracy'
     if os.path.exists('models/history.history'):
       history = pickle.load(open('models/history.history','rb'))
@@ -349,7 +352,7 @@ def main(config):
     # Correction: Factory.get_model returns the Wrapper instance (LSTMModel or CNN1DModel).
     # We need to call .create_model() on it.
     
-    action_model_wrapper = ModelFactory.get_model(config)
+    action_model_wrapper = ModelFactory.get_model(config.model_dump())
     lstm = action_model_wrapper.create_model(input_shape=(sequence_length, 51))
 
     print(lstm.summary())
@@ -363,12 +366,12 @@ def main(config):
     
 
 
-
 if __name__ == "__main__":
 
     
     with open('config.yaml') as f:
-         config = yaml.load(f, Loader=SafeLoader)
+         config_data = yaml.load(f, Loader=SafeLoader)
+         config = Config(**config_data)
 
     main(config=config)
    

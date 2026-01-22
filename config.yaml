@@ -4,7 +4,7 @@ test_set_path: ""
 classes: [JumpingJack, Lunges,PullUps,PushUps,WallPushups] #Classes names in Dataset
 no_classes: 5 #Number of classes in dataset
 test_size: 0.2 #Size of testset
-theshold: 0.4 #Threshold for kepoints and boundingBoxes
+threshold: 0.4 #Threshold for kepoints and boundingBoxes
 model_directory: models/movenet_multipose_lightning_1 #Pose estimation model directory
 sequence_length: 30 # number of frames in each video
 no_sequences: 30 # number of videos in each class

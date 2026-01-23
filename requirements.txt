@@ -8,3 +8,4 @@ tensorflow-hub
 keras
 tensorflow[and-cuda]
 ultralytics
+pydantic

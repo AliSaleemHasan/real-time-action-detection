@@ -27,6 +27,7 @@ from utils.draw_output import draw_features ,EDGES,draw_boundingBoxes
 from src.models.factory import ModelFactory
 from src.pose_estimation.FeatureGenerator import FeatureGenerator
 from src.pose_estimation.yolo import YOLOPoseEstimator
+from src.config_schema import Config
 from utils.tracker import Tracker
 try:
     from utils.gpu_helper import configure_gpu
@@ -38,7 +39,8 @@ except ImportError:
 
 # get configuration file 
 with open('config.yaml') as f:
-    config = yaml.load(f, Loader=SafeLoader)
+    config_data = yaml.load(f, Loader=SafeLoader)
+    config = Config(**config_data)
 
 parser = argparse.ArgumentParser(description="detect on video or webcam feed")
 parser.add_argument("--input",default = None,help="input of detection \n None for webcam \n videoPath for video \n rtsp link")
@@ -294,12 +296,19 @@ def detect(pose_model,action_model,video_path,actions,sequence_length,frame_dist
    
 
 # get all needed configuration for detection from config file 
-def main(config):
-    classes = config['classes']
-    model_directory = config['model_directory']
-    sequence_length= config['sequence_length']
-    saved_weights_path=config['saved_weights_path']
-    modelConfig = config['model']  
+def main(config: Config):
+    classes = config.classes
+    model_directory = config.model_directory
+    sequence_length= config.sequence_length
+    saved_weights_path=config.saved_weights_path
+    
+    # helper to find the model config (Assuming Factory handles the new structure or we need to adapt)
+    # The original factory uses dictionary access. We might need to keep using .model_dump() for factory compatibility
+    # or update factory. For now, let's pass .model_dump() to factory if it expects dict.
+    # But let's check how 'modelConfig' was valid. It was `config['model']`.
+    # config.model returns a list of LayerConfig objects.
+    modelConfig = [layer.model_dump() for layer in config.model] 
+
     frame_distance=1
     if os.path.exists("DATA_SET/sequence_rate.txt"):
         with open("DATA_SET/sequence_rate.txt",'r') as f:
@@ -313,12 +322,15 @@ def main(config):
     pose_estimator = YOLOPoseEstimator(model_path='yolo11n-pose.pt')
 
     # Create model using factory
-    action_model_wrapper = ModelFactory.get_model(config)
+    # Factory expects dict probably? Let's check. 
+    # If ModelFactory.get_model(config) expects the whole config dict to check 'architecture',
+    # we should pass config.model_dump().
+    action_model_wrapper = ModelFactory.get_model(config.model_dump())
     action_model = action_model_wrapper.create_model(input_shape=(sequence_length, 51))
     action_model.load_weights(saved_weights_path)
     # Check if we should use multi-class detection based on the last layer's activation
     is_multiclass = modelConfig[-1]['activation'] == 'softmax'
-    threshold = config.get('theshold', 0.4) # Using 'theshold' as in config.yaml
+    threshold = config.threshold 
     detect(pose_estimator,action_model,input,classes,sequence_length,frame_distance, is_multiclass, threshold)
 
 

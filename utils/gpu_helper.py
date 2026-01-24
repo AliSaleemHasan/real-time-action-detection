@@ -2,6 +2,7 @@ import subprocess
 import tensorflow as tf
 import logging
 import sys
+import os
 
 # Configure logging for GPU helper
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,

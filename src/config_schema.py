@@ -43,6 +43,7 @@ class Config(BaseModel):
     sequence_length: int = Field(..., gt=0)
     no_sequences: int = Field(..., gt=0)
     epochs: int = Field(..., gt=0)
+    batch_size: int = Field(64, gt=0, description="Batch size for training")
     optimizer: str
     loss: str
     log_path: str

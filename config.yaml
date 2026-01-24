@@ -1,14 +1,15 @@
 #General SETTINGS
 data_directory: DATA_SET #DataSet Directory
-test_set_path: ""
-classes: [JumpingJack, Lunges,PullUps,PushUps,WallPushups] #Classes names in Dataset
-no_classes: 5 #Number of classes in dataset
+test_set_path: "TEST_SET"
+classes: [JumpingJack, Lunges,PullUps,PushUps] #Classes names in Dataset
+no_classes: 4 #Number of classes in dataset
 test_size: 0.2 #Size of testset
 threshold: 0.4 #Threshold for kepoints and boundingBoxes
 model_directory: models/movenet_multipose_lightning_1 #Pose estimation model directory
 sequence_length: 30 # number of frames in each video
 no_sequences: 30 # number of videos in each class
-epochs: 500 #number of epochs to train on
+epochs: 2000 #number of epochs to train on
+batch_size: 64 #Batch size for training
 optimizer: adam #Adam , RMSprops .. etc
 loss: categorical_crossentropy #binary_crossentropy, categorical_crossentropy...
 log_path: "logs" # where to save logs after training
@@ -35,5 +36,5 @@ model:
   - layer: Dropout
     drop_perc: 0.5
   - layer: Dense
-    units: 5
+    units: 4
     activation: softmax

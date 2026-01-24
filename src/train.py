@@ -22,8 +22,6 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Input,LSTM, Dense,Dropout
 from tensorflow.keras.metrics import Precision
-from src.config_schema import Config
-
 
 if True:  # Include project path
     import sys
@@ -34,6 +32,7 @@ if True:  # Include project path
     from utils.plot_lib import plot_confusion_matrix,plt_statistic
     try:
         from utils.gpu_helper import configure_gpu
+        from src.config_schema import Config
         # Configure GPU immediately to ensure memory growth is set before TF initializes
         configure_gpu()
     except ImportError:
@@ -185,7 +184,7 @@ class myCallback(tf.keras.callbacks.Callback):
 
 
 
-def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,metric):
+def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,batch_size,optimizer,loss,metric):
     '''
     This function is to train predefiend model and save training statistic 
 
@@ -194,7 +193,8 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,met
             model_path: path for previous saved weights if found
             X_train : data to train on 
             y_train : labels of data to train on 
-            epoches : number of epochs to train the model 
+            epoches : number of epochs to train the model
+            batch_size : batch size for training
             optimizer: binary_crossentropy, Adam, RMSpros ...etc
             loss: Probabilistic losses (binary_crossentropy, binary_crossentropy ...etc)
             metric: Accuracy, BinaryAccuracy, BinaryAccuracy, SparseCategoricalAccuracy ...etc
@@ -228,7 +228,7 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,met
     model.compile(optimizer, loss, metrics=metrics)
 
     # start training
-    history =model.fit(X_train, y_train, epochs= epochs,batch_size=16 ,callbacks=[tb_callback,callback]   ,validation_data = (X_val,y_val))
+    history =model.fit(X_train, y_train, epochs= epochs,batch_size=batch_size ,callbacks=[tb_callback,callback]   ,validation_data = (X_val,y_val))
 
     # save model weights after training
     model.save("models/weights.h5")
@@ -272,20 +272,34 @@ def evaluate_model(model,history, classes, X_train, X_val,X_test, y_train, y_val
     # accuracy on test set
     model.evaluate(X_val, y_val)
 
-    # get prediction as integers [0,1]
-    y_val_predict  = np.array(model.predict(X_val)).astype(int)
-
-    y_test_predict  = np.array(model.predict(X_test)).astype(int)
-
-
-    # git index of predicted values in each test sample
-    # y_val_predict = np.argmax(y_val_predict,axis=1)
+    # get prediction as probabilities
+    y_val_probs = model.predict(X_val)
+    y_test_probs = model.predict(X_test)
 
 
+    # Determine if Multiclass or Binary based on output shape
+    # If final dimension > 1, it's multiclass (Softmax). If == 1, it's binary (Sigmoid).
+    if y_val_probs.shape[-1] > 1:
+        y_val_predict = np.argmax(y_val_probs, axis=1)
+        y_test_predict = np.argmax(y_test_probs, axis=1)
+    else:
+        # Binary Classification logic
+        y_val_predict = (y_val_probs > 0.5).astype(int).flatten()
+        y_test_predict = (y_test_probs > 0.5).astype(int).flatten()
 
-    # git index of true values in each test sample
-    # y_val = np.array(y_val)
-    # y_val = np.argmax(y_val,axis =1)
+
+    # Handle Ground Truth
+    # If using categorical_crossentropy, y_val is One-Hot (2D). 
+    # If using sparse_categorical or binary, it might be 1D or (N,1).
+    if len(y_val.shape) > 1 and y_val.shape[1] > 1:
+        y_val = np.argmax(y_val, axis=1)
+    else:
+        y_val = np.array(y_val).flatten().astype(int)
+    
+    if len(y_test.shape) > 1 and y_test.shape[1] > 1:
+        y_test = np.argmax(y_test, axis=1)
+    else:
+        y_test = np.array(y_test).flatten().astype(int)
 
     # Time cost
     average_time = (time.time() - t0) / (len(y_train) + len(y_val))
@@ -327,6 +341,7 @@ def main(config: Config):
     epochs = config.epochs
     optimizer = config.optimizer
     loss = config.loss
+    batch_size = config.batch_size
     # config.model is list of objects, we need to convert to list of dicts for legacy compat if needed
     # or just use it if factory supports it. For now, matching detect.py approach:
     model_config = [layer.model_dump() for layer in config.model]
@@ -357,7 +372,7 @@ def main(config: Config):
 
     print(lstm.summary())
     # train model on our data
-    model =Train(lstm,saved_weights_path,X_train,y_train,X_val,y_val,epochs,optimizer,loss,metric)
+    model =Train(lstm,saved_weights_path,X_train,y_train,X_val,y_val,epochs,batch_size,optimizer,loss,metric)
 
     if test_path != "":
         # evaluate model on test data

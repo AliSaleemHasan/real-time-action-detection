@@ -12,3 +12,4 @@ models/*.h5
 *.gz
 RAW_VIDEOS
 *.pt
+*venv

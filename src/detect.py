@@ -20,9 +20,6 @@ from yaml.loader import SafeLoader
 
 import sys
 import os
-ROOT = os.path.dirname(os.path.abspath(__file__))+"/../"
-CURR_PATH = os.path.dirname(os.path.abspath(__file__))+"/"
-sys.path.append(ROOT)
 from utils.draw_output import draw_features ,EDGES,draw_boundingBoxes
 from src.models.factory import ModelFactory
 from src.pose_estimation.FeatureGenerator import FeatureGenerator

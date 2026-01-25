@@ -4,8 +4,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 import numpy as np
 
-# Add project root to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 # Import module to test (will use sys.path hack)
 try:

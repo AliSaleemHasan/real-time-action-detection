@@ -4,8 +4,7 @@ import unittest
 from unittest.mock import MagicMock, patch, mock_open
 import numpy as np
 
-# Add project root to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 from utils.data_processing import createDatasetFolders, frames_extraction, deleteNonUsedVids
 

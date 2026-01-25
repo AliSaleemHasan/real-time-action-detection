@@ -4,8 +4,7 @@ import yaml
 import pytest
 from pydantic import ValidationError
 
-# Add project root to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from src.config_schema import Config
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), '..', 'config.yaml')

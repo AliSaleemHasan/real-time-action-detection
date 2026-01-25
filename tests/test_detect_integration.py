@@ -2,8 +2,7 @@ import unittest
 import yaml
 import os
 import sys
-# Add project root to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 from src.models.factory import ModelFactory
 

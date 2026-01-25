@@ -4,8 +4,7 @@ import unittest
 import numpy as np
 import cv2
 
-# Add project root to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 from utils.draw_output import draw_features, EDGES
 

@@ -23,20 +23,16 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Input,LSTM, Dense,Dropout
 from tensorflow.keras.metrics import Precision
 
-if True:  # Include project path
-    import sys
-    import os
-    ROOT = os.path.dirname(os.path.abspath(__file__))+"/../"
-    CURR_PATH = os.path.dirname(os.path.abspath(__file__))+"/"
-    sys.path.append(ROOT)
-    from utils.plot_lib import plot_confusion_matrix,plt_statistic
-    try:
-        from utils.gpu_helper import configure_gpu
-        from src.config_schema import Config
-        # Configure GPU immediately to ensure memory growth is set before TF initializes
-        configure_gpu()
-    except ImportError:
-        print("Warning: Could not import gpu_helper. Running without explicit GPU configuration.")
+import sys
+import os
+from utils.plot_lib import plot_confusion_matrix,plt_statistic
+try:
+    from utils.gpu_helper import configure_gpu
+    from src.config_schema import Config
+    # Configure GPU immediately to ensure memory growth is set before TF initializes
+    configure_gpu()
+except ImportError:
+    print("Warning: Could not import gpu_helper. Running without explicit GPU configuration.")
 
 
 

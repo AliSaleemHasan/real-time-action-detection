@@ -52,7 +52,26 @@ output was as follow:
 
 per in mind that extracting keypoints from each frame take 40ms and action detection take 70ms and tracking take about 15ms
 
-## try yourself
+## Installation
+
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management.
+
+### Requirements
+- Python 3.9+ 
+- CUDA 11.x or 12.x (for GPU training)
+
+### Setup
+Run the setup script to auto-detect your CUDA version and configure dependencies:
+```bash
+uv run scripts/setup_cuda.py
+uv lock && uv sync
+```
+
+The script automatically detects your CUDA version and configures:
+- **CUDA 11.x**: TensorFlow 2.10, Python 3.9-3.10
+- **CUDA 12.x**: TensorFlow 2.16+, Python 3.9+
+
+## Try Yourself
 
 First remove model weights in models folder 
 ```

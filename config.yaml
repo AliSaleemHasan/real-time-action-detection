@@ -11,6 +11,7 @@ no_sequences: 30 # number of videos in each class
 epochs: 2000 #number of epochs to train on
 batch_size: 64 #Batch size for training
 optimizer: adam #Adam , RMSprops .. etc
+learning_rate: 0.0001 #Learning rate for the optimizer
 loss: categorical_crossentropy #binary_crossentropy, categorical_crossentropy...
 log_path: "logs" # where to save logs after training
 saved_weights_path: "models/weights.h5"

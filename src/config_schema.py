@@ -45,6 +45,7 @@ class Config(BaseModel):
     epochs: int = Field(..., gt=0)
     batch_size: int = Field(64, gt=0, description="Batch size for training")
     optimizer: str
+    learning_rate: float = Field(0.001, gt=0, description="Learning rate for the optimizer")
     loss: str
     log_path: str
     saved_weights_path: str

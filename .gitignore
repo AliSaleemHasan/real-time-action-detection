@@ -13,3 +13,4 @@ models/*.h5
 RAW_VIDEOS
 *.pt
 *venv
+.agent

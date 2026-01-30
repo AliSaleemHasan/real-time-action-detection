@@ -180,7 +180,7 @@ class myCallback(tf.keras.callbacks.Callback):
 
 
 
-def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,batch_size,optimizer,loss,metric):
+def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,batch_size,optimizer,learning_rate,loss,metric):
     '''
     This function is to train predefiend model and save training statistic 
 
@@ -191,7 +191,8 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,batch_size,optimiz
             y_train : labels of data to train on 
             epoches : number of epochs to train the model
             batch_size : batch size for training
-            optimizer: binary_crossentropy, Adam, RMSpros ...etc
+            optimizer: Adam, RMSpros ...etc
+            learning_rate: learning rate for the optimizer
             loss: Probabilistic losses (binary_crossentropy, binary_crossentropy ...etc)
             metric: Accuracy, BinaryAccuracy, BinaryAccuracy, SparseCategoricalAccuracy ...etc
         
@@ -206,6 +207,12 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,batch_size,optimiz
     callback =myCallback()
     metrics = [Precision(),metric]
     
+    # Instantiate optimizer with learning rate
+    optimizer_instance = tf.keras.optimizers.get({
+        'class_name': optimizer,
+        'config': {'learning_rate': learning_rate}
+    })
+    
     # if weights are already caclulated then load them to the model and return it 
     if os.path.exists(model_path) == True:
 
@@ -213,7 +220,7 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,batch_size,optimiz
         model.load_weights(model_path)
 
         #compile model
-        model.compile(optimizer, loss, metrics=metrics)
+        model.compile(optimizer_instance, loss, metrics=metrics)
 
         return model
 
@@ -221,7 +228,7 @@ def Train(model,model_path,X_train,y_train,X_val,y_val,epochs,batch_size,optimiz
 
 
     # compile the model
-    model.compile(optimizer, loss, metrics=metrics)
+    model.compile(optimizer_instance, loss, metrics=metrics)
 
     # start training
     history =model.fit(X_train, y_train, epochs= epochs,batch_size=batch_size ,callbacks=[tb_callback,callback]   ,validation_data = (X_val,y_val))
@@ -336,6 +343,7 @@ def main(config: Config):
     sequence_length= config.sequence_length
     epochs = config.epochs
     optimizer = config.optimizer
+    learning_rate = config.learning_rate
     loss = config.loss
     batch_size = config.batch_size
     # config.model is list of objects, we need to convert to list of dicts for legacy compat if needed
@@ -368,7 +376,7 @@ def main(config: Config):
 
     print(lstm.summary())
     # train model on our data
-    model =Train(lstm,saved_weights_path,X_train,y_train,X_val,y_val,epochs,batch_size,optimizer,loss,metric)
+    model =Train(lstm,saved_weights_path,X_train,y_train,X_val,y_val,epochs,batch_size,optimizer,learning_rate,loss,metric)
 
     if test_path != "":
         # evaluate model on test data
